@@ -16,13 +16,13 @@ firebase login
 
 ## الخطوة 1: إعداد بيانات SMTP الخاصة بك
 
-لقد زودتنا ببيانات Gmail الخاصة بك، استخدم الأمر التالي بالضبط في التيرمينال لتخزينها بشكل آمن على خوادم Firebase:
+استبدل القيم بإيميلك وكلمة مرور التطبيقات (App Password) من حساب Google، ثم شغّل الأمر لتخزينها بشكل آمن على خوادم Firebase. لا تكتب كلمة المرور في أي ملف داخل المشروع:
 
 ```bash
-firebase functions:config:set smtp.user="ahmedsupsa@gmail.com" smtp.pass="veaf pbis utxa wbrd"
+firebase functions:config:set smtp.user="YOUR_GMAIL_ADDRESS" smtp.pass="YOUR_GMAIL_APP_PASSWORD"
 ```
 
-**ملاحظة:** تم استخدام "كلمة مرور التطبيقات" التي زودتنا بها لضمان الأمان والعمل المستقر مع Gmail.
+**ملاحظة:** أنشئ كلمة مرور تطبيقات من: حساب Google ← الأمان ← كلمات مرور التطبيقات.
 
 ---
 
