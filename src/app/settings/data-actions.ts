@@ -1,0 +1,87 @@
+
+'use server';
+
+import { db } from "@/lib/firebase-admin";
+import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
+
+const COLLECTIONS_TO_MANAGE = [
+    'api_tokens',
+    'clients',
+    'folders',
+    'files',
+    'habits',
+    'ideas',
+    'invoices',
+    'legal_files',
+    'legal_info',
+    'products',
+    'projects',
+    'snippets',
+    'subscriptions',
+    'support_tickets',
+    'tasks',
+    'tools',
+    'transactions',
+    'numbered_links'
+];
+
+// Fetches all data from specified collections
+export async function exportData(): Promise<Record<string, any[]>> {
+    const allData: Record<string, any[]> = {};
+    
+    for (const collectionName of COLLECTIONS_TO_MANAGE) {
+        try {
+            const querySnapshot = await getDocs(collection(db, collectionName));
+            allData[collectionName] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error(`Error exporting collection ${collectionName}:`, error);
+        }
+    }
+    
+    return allData;
+}
+
+
+// Wipes and imports data into specified collections
+export async function importData(jsonString: string): Promise<{ success: boolean; message: string }> {
+    let data;
+    try {
+        data = JSON.parse(jsonString);
+    } catch (error) {
+        return { success: false, message: "ملف JSON غير صالح." };
+    }
+
+    try {
+        for (const collectionName of COLLECTIONS_TO_MANAGE) {
+            const querySnapshot = await getDocs(collection(db, collectionName));
+            if (!querySnapshot.empty) {
+                const deleteBatch = writeBatch(db);
+                querySnapshot.docs.forEach(doc => {
+                    deleteBatch.delete(doc.ref);
+                });
+                await deleteBatch.commit();
+            }
+        }
+        
+        const importBatch = writeBatch(db);
+        for (const collectionName of COLLECTIONS_TO_MANAGE) {
+            if (data[collectionName] && Array.isArray(data[collectionName])) {
+                for (const item of data[collectionName]) {
+                    if (item.id) {
+                        const docRef = doc(db, collectionName, item.id);
+                        const { id, ...itemData } = item;
+                        importBatch.set(docRef, itemData);
+                    }
+                }
+            }
+        }
+        
+        await importBatch.commit();
+        
+        return { success: true, message: "تم استيراد البيانات بنجاح." };
+
+    } catch (error: any) {
+        console.error("Error during data import:", error);
+        return { success: false, message: `فشل الاستيراد: ${error.message}` };
+    }
+}
