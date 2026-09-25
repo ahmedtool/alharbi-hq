@@ -36,7 +36,7 @@ interface Ticket {
 }
 
 const statusMap = {
-    new: { label: "جديدة", variant: "destructive" as const },
+    new: { label: "جديدة", variant: "destructive" as const, className: "" },
     'in-progress': { label: "قيد المعالجة", variant: "secondary" as const, className: "bg-yellow-100 text-yellow-800" },
     closed: { label: "مغلقة", variant: "secondary" as const, className: "bg-green-100 text-green-800" },
 };

@@ -2,19 +2,15 @@
 'use server';
 
 import { db } from "@/lib/firebase-admin";
-import { doc, getDoc } from "firebase/firestore";
 
 // This function now uses the Firebase Admin SDK to interact with Firestore
 // to fetch the PIN, but it no longer sets custom claims.
 
 async function getPinFromFirestore(): Promise<string | null> {
     try {
-        const docRef = doc(db, "app_config", "security");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().loginPin) {
-            return docSnap.data().loginPin;
-        }
-        return null;
+        const docSnap = await db.collection("app_config").doc("security").get();
+        const loginPin = docSnap.data()?.loginPin;
+        return typeof loginPin === "string" && loginPin ? loginPin : null;
     } catch (error) {
         console.error("Error fetching PIN from Firestore:", error);
         return null;
@@ -23,12 +19,8 @@ async function getPinFromFirestore(): Promise<string | null> {
 
 export async function verifyPin(pin: string): Promise<{ success: boolean; message: string }> {
     // 1. Try to get PIN from Firestore
-    let serverPin = await getPinFromFirestore();
-
     // 2. If not in Firestore, fall back to environment variable
-    if (!serverPin) {
-        serverPin = process.env.LOGIN_PIN;
-    }
+    const serverPin = (await getPinFromFirestore()) ?? process.env.LOGIN_PIN;
     
     // 3. If no PIN is set anywhere, deny access
     if (!serverPin) {

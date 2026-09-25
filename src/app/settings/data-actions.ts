@@ -2,7 +2,18 @@
 'use server';
 
 import { db } from "@/lib/firebase-admin";
-import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
+import type { WriteBatch } from "firebase-admin/firestore";
+
+// Firestore allows at most 500 writes per batch.
+const BATCH_LIMIT = 500;
+
+async function commitInChunks(ops: Array<(batch: WriteBatch) => void>) {
+    for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+        const batch = db.batch();
+        ops.slice(i, i + BATCH_LIMIT).forEach((op) => op(batch));
+        await batch.commit();
+    }
+}
 
 const COLLECTIONS_TO_MANAGE = [
     'api_tokens',
@@ -31,7 +42,7 @@ export async function exportData(): Promise<Record<string, any[]>> {
     
     for (const collectionName of COLLECTIONS_TO_MANAGE) {
         try {
-            const querySnapshot = await getDocs(collection(db, collectionName));
+            const querySnapshot = await db.collection(collectionName).get();
             allData[collectionName] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } catch (error) {
             console.error(`Error exporting collection ${collectionName}:`, error);
@@ -53,30 +64,23 @@ export async function importData(jsonString: string): Promise<{ success: boolean
 
     try {
         for (const collectionName of COLLECTIONS_TO_MANAGE) {
-            const querySnapshot = await getDocs(collection(db, collectionName));
-            if (!querySnapshot.empty) {
-                const deleteBatch = writeBatch(db);
-                querySnapshot.docs.forEach(doc => {
-                    deleteBatch.delete(doc.ref);
-                });
-                await deleteBatch.commit();
-            }
+            const querySnapshot = await db.collection(collectionName).get();
+            await commitInChunks(querySnapshot.docs.map((d) => (batch: WriteBatch) => batch.delete(d.ref)));
         }
-        
-        const importBatch = writeBatch(db);
+
+        const writes: Array<(batch: WriteBatch) => void> = [];
         for (const collectionName of COLLECTIONS_TO_MANAGE) {
             if (data[collectionName] && Array.isArray(data[collectionName])) {
                 for (const item of data[collectionName]) {
                     if (item.id) {
-                        const docRef = doc(db, collectionName, item.id);
                         const { id, ...itemData } = item;
-                        importBatch.set(docRef, itemData);
+                        const docRef = db.collection(collectionName).doc(String(id));
+                        writes.push((batch) => batch.set(docRef, itemData));
                     }
                 }
             }
         }
-        
-        await importBatch.commit();
+        await commitInChunks(writes);
         
         return { success: true, message: "تم استيراد البيانات بنجاح." };
 

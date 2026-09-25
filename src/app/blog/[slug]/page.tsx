@@ -19,8 +19,9 @@ export async function generateStaticParams() {
 }
 
 // This function generates metadata for each post dynamically.
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const decodedSlug = decodeURIComponent(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const decodedSlug = decodeURIComponent(slug);
   const post = posts.find(p => p.slug === decodedSlug);
 
   if (!post) {
@@ -48,11 +49,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const logoUrl = "https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png";
   
   // Decode the slug from the URL (e.g., from %D9%85%D9%86-%D8%A3%D9%86%D8%A7 to من-أنا)
-  const decodedSlug = decodeURIComponent(params.slug);
+  const { slug } = await params;
+  const decodedSlug = decodeURIComponent(slug);
   const post = posts.find(p => p.slug === decodedSlug);
 
   // If no post is found for the slug, show a 404 page.

@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Loader2, TrendingUp, Sparkles, BrainCircuit, X, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { forecastSales, SalesForecastOutput } from "@/ai/flows/sales-forecasting-flow";
+import { forecastSales } from "@/ai/flows/sales-forecasting-flow";
+import type { SalesForecastOutput } from "@/ai/schemas/sales-forecasting-schema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -88,7 +89,7 @@ export default function SalesForecastingPage() {
     };
     
     const chartData = React.useMemo(() => {
-        const data = historicalData.map((value, index) => ({
+        const data: Array<{ name: string; 'المبيعات الفعلية'?: number; 'المبيعات المتوقعة'?: number }> = historicalData.map((value, index) => ({
             name: `فترة ${new Intl.NumberFormat('ar-SA').format(index + 1)}`,
             'المبيعات الفعلية': value,
         }));

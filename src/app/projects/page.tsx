@@ -421,7 +421,7 @@ export default function ProjectsPage() {
                     <CardFooter className="flex justify-between">
                         <span className="font-bold text-lg" dir="ltr">{new Intl.NumberFormat('ar-SA').format(Number(project.budget || 0))} <span className="saudi-riyal">&#xea;</span></span>
                         <div className='flex items-center gap-2'>
-                          {project.isPublic && <Globe className="h-4 w-4 text-sky-500" title="مشروع عام"/>}
+                          {project.isPublic && <span title="مشروع عام"><Globe className="h-4 w-4 text-sky-500" aria-label="مشروع عام"/></span>}
                           {project.clientName && <span className="text-sm text-muted-foreground">العميل: {project.clientName}</span>}
                         </div>
                     </CardFooter>

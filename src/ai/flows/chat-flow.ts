@@ -55,8 +55,8 @@ export async function chat(history: z.infer<typeof chatHistorySchema>): Promise<
     // 2. Generate a response using the data as context.
     const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash', 
-        history: history,
-        prompt: `
+        messages: history,
+        system: `
             You are a smart assistant named 'Ahmed' in a personal dashboard application.
             Your user, 'Ahmed Al-Harbi', will ask you questions about his data.
             You must answer his questions based *only* on the JSON data provided below. Do not make up any information.
@@ -66,7 +66,7 @@ export async function chat(history: z.infer<typeof chatHistorySchema>): Promise<
             ${dataContext}
             --- END OF DASHBOARD DATA ---
 
-            Based on the data, answer the user's question. If the data is not present to answer the question, say you don't have information about it.
+            Based on the data, answer the user's latest message. If the data is not present to answer the question, say you don't have information about it.
         `,
         config: {
             temperature: 0.2, // Lower temperature for more factual and less creative responses

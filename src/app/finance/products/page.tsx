@@ -270,7 +270,7 @@ export default function ProductsPage() {
                     <TableRow key={prod.id}>
                         <TableCell>
                             <div className="flex items-center gap-2">
-                                {prod.isPublic && <Globe className="h-4 w-4 text-sky-500 flex-shrink-0" title="منتج عام"/>}
+                                {prod.isPublic && <span title="منتج عام"><Globe className="h-4 w-4 text-sky-500 flex-shrink-0" aria-label="منتج عام"/></span>}
                                 <p className="font-medium">{prod.name}</p>
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-2 pr-6">{prod.description}</p>

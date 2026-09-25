@@ -12,6 +12,7 @@ import { PlusCircle, Trash2, Printer, Save, Loader2, Check, ChevronsUpDown } fro
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { db, storage } from "@/lib/firebase";
 import { collection, doc, getDoc, setDoc, getDocs, query, orderBy, limit, deleteDoc, where, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

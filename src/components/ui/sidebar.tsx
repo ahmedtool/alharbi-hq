@@ -207,7 +207,7 @@ const SidebarMenuButton = React.forwardRef<
           <TooltipTrigger asChild>
             <Button
               ref={ref}
-              variant={isActive ? "primary" : variant}
+              variant={isActive ? "default" : variant}
               size="icon"
               className="h-10 w-10"
               data-active={isActive}
@@ -228,7 +228,7 @@ const SidebarMenuButton = React.forwardRef<
   return (
     <Button
       ref={ref}
-      variant={isActive ? "primary" : variant}
+      variant={isActive ? "default" : variant}
       size={size}
       className={cn("h-10 justify-start", `pl-${depth * 4 + 4}`)}
       data-active={isActive}
