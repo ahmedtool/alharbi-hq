@@ -2,15 +2,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Mail, Link as LinkIcon, Search, Hash, Loader2, ArrowLeft, ExternalLink, Download } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Mail, Loader2 } from 'lucide-react';
+import { PublicShell } from '@/components/app/public-shell';
+import { logoAt } from '@/lib/brand';
 import { db } from '@/lib/db';
 import { collection, query, where, getDocs, limit } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper function to convert Arabic-Indic digits (١٢٣) to English digits (123)
 const toEnglishDigits = (str: string) => {
@@ -109,137 +106,86 @@ export default function BioPage() {
         setHasSearched(false);
     }
 
-    return (
-        <div className="container mx-auto px-4 py-12 sm:py-16 max-w-2xl">
-            {/* Header */}
-            <header className="flex flex-col items-center text-center mb-10">
-                <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                    <Image
-                        src={pageData.logoUrl}
-                        alt={`شعار ${pageData.name}`}
-                        width={96}
-                        height={96}
-                        className="rounded-full border-4 border-background shadow-none mb-4"
-                        priority
-                    />
-                </motion.div>
-                <h1 className="text-3xl font-bold">{pageData.name}</h1>
-                <p className="text-muted-foreground mt-2 max-w-md whitespace-pre-line">{pageData.bio}</p>
-            </header>
+    const socialLabel: Record<string, string> = { x: 'X', tiktok: 'TikTok', whatsapp: 'واتساب', email: 'الإيميل' };
+    const links = [
+        { label: 'موقعي الشخصي', hint: 'نبذة وأعمالي', href: '/' },
+        { label: 'اطلب مشروع', hint: 'أرسل طلبك وأرد عليك', href: '/support/submit' },
+    ];
 
-            {/* Numbered Access Search */}
-            <section className="mb-12">
-                <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader className="text-center pb-2">
-                        <CardTitle className="flex items-center justify-center gap-2">
-                            <Hash className="h-5 w-5 text-primary" /> الوصول بالرقم
-                        </CardTitle>
-                        <CardDescription>اكتب الرقم اللي شفته في المقطع للوصول السريع</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSearch} className="space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <div className="relative flex-1">
-                                    <Hash className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input 
-                                        placeholder="الرقم (مثلاً: ٢٣٩)" 
-                                        className="pr-10 text-center font-bold text-lg" 
-                                        value={searchNumber}
-                                        onChange={(e) => setSearchSearchNumber(e.target.value)}
-                                        disabled={isSearching}
-                                    />
-                                </div>
-                                <div className="relative flex-1">
-                                    <Input 
-                                        placeholder="اسمك (اختياري)" 
-                                        className="text-center" 
-                                        value={userName}
-                                        onChange={(e) => setUserName(e.target.value)}
-                                        disabled={isSearching}
-                                    />
-                                </div>
-                                <Button type="submit" disabled={isSearching || !searchNumber.trim()} className="w-full sm:w-auto">
-                                    {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 ml-2" />}
-                                    بحث
-                                </Button>
-                            </div>
+    return (
+        <PublicShell active="bio">
+            <div className="pf pf-bar bio">
+                <div className="container bio-wrap">
+                    {/* الرأس */}
+                    <header className="bio-head">
+                        <img className="bio-logo bio-in" style={{ ['--d' as string]: 0 }} src={logoAt(192)} alt={`شعار ${pageData.name}`} width={88} height={88} />
+                        <div className="eyebrow bio-in" style={{ ['--d' as string]: 1 }} lang="en">Ahmed Alharbi</div>
+                        <h1 className="bio-in" style={{ ['--d' as string]: 2 }}>{pageData.name}</h1>
+                        <p className="bio-in" style={{ ['--d' as string]: 3 }}>{pageData.bio}</p>
+                    </header>
+
+                    {/* الوصول بالرقم */}
+                    <section className="bio-block bio-in" style={{ ['--d' as string]: 4 }}>
+                        <div className="sec-head bio-rule"><div><div className="eyebrow">٠١</div><h2>الوصول بالرقم</h2></div><p>اكتب الرقم اللي شفته في المقطع</p></div>
+                        <form onSubmit={handleSearch} className="bio-form">
+                            <label className="bio-field bio-field-num">
+                                <span>#</span>
+                                <input inputMode="numeric" placeholder="الرقم، مثلًا ٢٣٩" value={searchNumber}
+                                    onChange={(e) => setSearchSearchNumber(e.target.value)} disabled={isSearching} aria-label="الرقم" />
+                            </label>
+                            <label className="bio-field">
+                                <input placeholder="اسمك (اختياري)" value={userName}
+                                    onChange={(e) => setUserName(e.target.value)} disabled={isSearching} aria-label="اسمك" />
+                            </label>
+                            <button type="submit" className="btn btn-primary" disabled={isSearching || !searchNumber.trim()}>
+                                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : null} بحث
+                            </button>
                         </form>
 
-                        <AnimatePresence>
-                            {hasSearched && searchResult && (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10 }} 
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-6 p-4 bg-background border rounded-lg shadow-sm"
-                                >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">رقم {searchResult.number}</span>
-                                                <h3 className="font-bold text-right">{searchResult.title}</h3>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground text-right">{searchResult.description}</p>
-                                        </div>
-                                        <Button asChild size="sm">
-                                            <a href={searchResult.url} target="_blank" rel="noopener noreferrer">
-                                                {searchResult.type === 'file' ? <Download className="h-4 w-4 ml-2"/> : <ExternalLink className="h-4 w-4 ml-2" />}
-                                                {searchResult.type === 'file' ? 'تحميل' : 'فتح'}
-                                            </a>
-                                        </Button>
+                        {hasSearched && searchResult && (
+                            <div className="bio-result">
+                                <span className="bio-result-num">{searchResult.number}</span>
+                                <div className="bio-result-body">
+                                    <h3>{searchResult.title}</h3>
+                                    {searchResult.description && <p>{searchResult.description}</p>}
+                                    <div className="bio-result-actions">
+                                        <a className="btn btn-primary" href={searchResult.url} target="_blank" rel="noopener noreferrer">
+                                            {searchResult.type === 'file' ? 'تحميل' : 'فتح'} ↗
+                                        </a>
+                                        <button type="button" className="btn btn-ghost" onClick={resetSearch}>بحث عن رقم آخر</button>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={resetSearch} className="mt-4 w-full text-xs text-muted-foreground">
-                                        بحث عن رقم آخر
-                                    </Button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </CardContent>
-                </Card>
-            </section>
+                                </div>
+                            </div>
+                        )}
+                    </section>
 
-            {/* Links */}
-            <section className="mb-12">
-                <h2 className="font-bold text-center text-xl mb-6">✨ بصماتي الرقمية</h2>
-                <div className="flex flex-col gap-4">
-                    <a href="/" className="group block">
-                        <Card className="hover:bg-muted/80 transition-colors">
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="bg-muted p-3 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <LinkIcon className="h-6 w-6" />
-                                </div>
-                                <span className="font-semibold text-lg">موقعي الشخصي</span>
-                            </CardContent>
-                        </Card>
-                    </a>
-                    <a href="/support/submit" className="group block">
-                        <Card className="hover:bg-muted/80 transition-colors">
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="bg-muted p-3 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <Mail className="h-6 w-6" />
-                                </div>
-                                <span className="font-semibold text-lg">تواصل معي لطلب مشروع</span>
-                            </CardContent>
-                        </Card>
-                    </a>
+                    {/* الروابط */}
+                    <section className="bio-block bio-in" style={{ ['--d' as string]: 5 }}>
+                        <div className="sec-head bio-rule"><div><div className="eyebrow">٠٢</div><h2>روابطي</h2></div></div>
+                        <ul className="bio-links">
+                            {links.map((l) => (
+                                <li key={l.href}><a href={l.href}><span><b>{l.label}</b><small>{l.hint}</small></span><i aria-hidden="true">↖</i></a></li>
+                            ))}
+                            {pageData.socials.map((social) => (
+                                <li key={social.platform}>
+                                    <a href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`تواصل معي عبر ${socialLabel[social.platform] ?? social.platform}`}>
+                                        <span className="bio-social">
+                                            <em>
+                                                {social.platform === 'x' && <XIcon />}
+                                                {social.platform === 'tiktok' && <TikTokIcon />}
+                                                {social.platform === 'whatsapp' && <WhatsAppIcon />}
+                                                {social.platform === 'email' && <Mail />}
+                                            </em>
+                                            <b>{socialLabel[social.platform] ?? social.platform}</b>
+                                        </span>
+                                        <i aria-hidden="true">↖</i>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
                 </div>
-            </section>
-            
-            {/* Social Icons */}
-            <footer className="pt-8 border-t">
-                <h3 className="text-center font-semibold mb-4">للتواصل المباشر</h3>
-                <div className="flex justify-center gap-4">
-                    {pageData.socials.map((social) => (
-                        <Button key={social.platform} asChild variant="secondary" size="icon" className="h-16 w-16 rounded-full text-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
-                            <a href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`تواصل معي عبر ${social.platform}`}>
-                                {social.platform === 'x' && <XIcon />}
-                                {social.platform === 'tiktok' && <TikTokIcon />}
-                                {social.platform === 'whatsapp' && <WhatsAppIcon />}
-                                {social.platform === 'email' && <Mail />}
-                            </a>
-                        </Button>
-                    ))}
-                </div>
-            </footer>
-        </div>
+            </div>
+        </PublicShell>
     );
 }

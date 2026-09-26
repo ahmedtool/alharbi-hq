@@ -21,7 +21,7 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 // It should be moved to a higher-level server component if possible.
 // export const metadata: Metadata = {
 //   title: 'أحمد الحربي',
-//   description: 'مركز القيادة حقك.',
+//   description: 'أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح.',
 //   manifest: '/manifest.json',
 // };
 
@@ -43,7 +43,12 @@ export default function RootLayout({
     <html lang="ar" suppressHydrationWarning dir="rtl">
         <head>
           <title>أحمد الحربي</title>
-          <meta name="description" content="مركز القيادة حقك." />
+          <meta name="description" content="أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح." />
+          <meta property="og:title" content="أحمد الحربي" />
+          <meta property="og:description" content="أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح." />
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="أحمد الحربي" />
+          <meta property="og:locale" content="ar_SA" />
           <link rel="icon" type="image/png" sizes="32x32" href={logoAt(32)} />
           <link rel="icon" type="image/png" sizes="192x192" href={logoAt(192)} />
           <link rel="apple-touch-icon" href={logoAt(180)} />

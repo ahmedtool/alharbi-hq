@@ -13,9 +13,8 @@ import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { collection, addDoc, Timestamp, getDocs } from "@/lib/db";
 import { ref, uploadBytes, getDownloadURL } from "@/lib/storage";
-import { Loader2, Send, File as FileIcon, X, Check, Mail, Phone, User, Package, MessageSquare, Briefcase, ArrowLeft } from "lucide-react";
-import Image from 'next/image';
-import Link from 'next/link';
+import { Loader2, Send, File as FileIcon, X, Check, Mail, Phone, User, Package, MessageSquare, Briefcase, ArrowLeft, ArrowRight } from "lucide-react";
+import { PublicShell } from "@/components/app/public-shell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -207,7 +206,8 @@ export default function SubmitTicketPage() {
 
     if (isSubmitted) {
         return (
-             <div className="flex flex-col items-center justify-center min-h-screen text-center p-4 bg-background">
+            <PublicShell active="request">
+             <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 py-16">
                 <AnimatePresence>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -215,49 +215,63 @@ export default function SubmitTicketPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                         <Card className="w-full max-w-lg shadow-none">
-                            <CardHeader className="items-center">
+                         <div className="w-full max-w-lg">
+                            <div className="flex flex-col items-center">
                                 <motion.div 
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
-                                    className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4"
+                                    className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mb-6"
                                 >
-                                    <Check className="w-8 h-8 text-green-600" />
+                                    <Check className="w-8 h-8 text-primary-foreground" />
                                 </motion.div>
-                                <CardTitle className="text-2xl">تم الإرسال بنجاح</CardTitle>
-                                <CardDescription>شكرًا لتواصلك معنا. سنقوم بالرد عليك في أقرب وقت ممكن عبر وسيلة التواصل التي قدمتها.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">يمكنك الآن إغلاق هذه الصفحة بأمان.</p>
-                            </CardContent>
-                         </Card>
+                                <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">وصلني طلبك</h1>
+                                <p className="text-muted-foreground text-lg leading-relaxed">شكرًا لتواصلك. برد عليك بأقرب وقت عبر وسيلة التواصل اللي كتبتها.</p>
+                            </div>
+                            <div className="mt-8 flex justify-center gap-2 flex-wrap">
+                                <Button asChild><a href="/">الصفحة الرئيسية</a></Button>
+                                <Button asChild variant="outline"><a href="/bio">روابطي</a></Button>
+                            </div>
+                         </div>
                     </motion.div>
                  </AnimatePresence>
             </div>
+            </PublicShell>
         )
     }
     
     const needsMessageInput = category ? (categoryMap[category]?.needsMessage ?? true) : true;
 
     const cardVariants = {
-        hidden: { opacity: 0, x: -50 },
+        hidden: { opacity: 0, x: 40 },
         visible: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: 50 },
+        exit: { opacity: 0, x: -40 },
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 text-right bg-background">
-             <div className="absolute top-6">
-                <Image src="https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png" alt="Logo" width={48} height={48} priority />
+        <PublicShell active="request">
+            <div className="pf pf-bar bio">
+                <div className="container bio-wrap req-wrap">
+                    <header className="bio-head req-head">
+                        <div className="eyebrow bio-in" style={{ ['--d' as string]: 0 }} lang="en">Start a project</div>
+                        <h1 className="bio-in" style={{ ['--d' as string]: 1 }}>اطلب مشروع</h1>
+                        <p className="bio-in" style={{ ['--d' as string]: 2 }}>عندك فكرة، طلب خدمة، أو فرصة تعاون؟ عبّ النموذج وأرد عليك بأقرب وقت.</p>
+                    </header>
+                    <ol className="req-steps bio-in" style={{ ['--d' as string]: 3 }} aria-label="خطوات الطلب">
+                        <li className={currentStep === 1 ? "active" : "done"}><b>٠١</b> معلومات التواصل</li>
+                        <li className={currentStep === 2 ? "active" : ""}><b>٠٢</b> تفاصيل الطلب</li>
+                    </ol>
+                </div>
             </div>
+        <div className="container mx-auto max-w-[720px] px-4 pb-24 text-right">
             
             <AnimatePresence mode="wait">
                 {currentStep === 1 && (
-                     <motion.div key="step1" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full max-w-2xl mt-20">
-                        <Card className="w-full shadow-none">
+                     <motion.div key="step1" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full">
+                        <Card className="w-full shadow-none rounded-lg">
                             <CardHeader>
-                                <CardTitle>الخطوة 1: معلومات التواصل</CardTitle>
+                                <div className="text-xs font-bold tracking-widest text-muted-foreground">٠١ / ٠٢</div>
+                                <CardTitle className="text-2xl">معلومات التواصل</CardTitle>
                                 <CardDescription>نحتاج إلى معلوماتك الأساسية للتواصل معك بخصوص طلبك.</CardDescription>
                             </CardHeader>
                              <CardContent className="space-y-6">
@@ -290,7 +304,7 @@ export default function SubmitTicketPage() {
                             </CardContent>
                             <CardFooter>
                                 <Button onClick={handleNextStep} size="lg" className="w-full">
-                                    التالي <ArrowLeft className="mr-2 h-4 w-4" />
+                                    التالي <ArrowLeft className="ms-2 h-4 w-4" />
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -298,10 +312,11 @@ export default function SubmitTicketPage() {
                 )}
 
                  {currentStep === 2 && (
-                    <motion.div key="step2" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full max-w-2xl mt-20">
-                        <Card className="w-full shadow-none">
+                    <motion.div key="step2" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full">
+                        <Card className="w-full shadow-none rounded-lg">
                             <CardHeader>
-                                <CardTitle>الخطوة 2: تفاصيل الطلب</CardTitle>
+                                <div className="text-xs font-bold tracking-widest text-muted-foreground">٠٢ / ٠٢</div>
+                                <CardTitle className="text-2xl">تفاصيل الطلب</CardTitle>
                                 <CardDescription>الرجاء تقديم تفاصيل دقيقة حول طلبك.</CardDescription>
                             </CardHeader>
                             <form onSubmit={handleSubmit}>
@@ -398,10 +413,10 @@ export default function SubmitTicketPage() {
                                 </CardContent>
                                 <CardFooter className="gap-2">
                                     <Button type="button" variant="ghost" onClick={() => setCurrentStep(1)}>
-                                        العودة
+                                        <ArrowRight className="me-2 h-4 w-4" /> رجوع
                                     </Button>
                                     <Button type="submit" className="w-full" disabled={isSending} size="lg">
-                                        {isSending && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
+                                        {isSending && <Loader2 className="me-2 h-4 w-4 animate-spin"/>}
                                         {isSending ? 'جاري الإرسال...' : 'إرسال الطلب'}
                                     </Button>
                                 </CardFooter>
@@ -411,5 +426,6 @@ export default function SubmitTicketPage() {
                 )}
             </AnimatePresence>
         </div>
+        </PublicShell>
     );
 }
