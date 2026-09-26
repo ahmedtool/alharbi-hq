@@ -1,227 +1,290 @@
-
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Mail, Users, ArrowLeft, TrendingUp } from "lucide-react";
-import Link from 'next/link';
-import Image from "next/image";
-import { motion, useInView } from "framer-motion";
-import { db } from "@/lib/db";
-import { doc, getDoc } from "@/lib/db";
-import useClient from "@/hooks/use-client";
+import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { PROFILE } from "./_portfolio/profile";
+import "./portfolio.css";
 
-function AnimatedCounter({ value, duration = 2 }: { value: number, duration?: number }) {
-    const [count, setCount] = useState(0);
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: "-100px" });
+const P = PROFILE;
+const arNum = (n: number) => n.toLocaleString("ar-SA");
 
-    useEffect(() => {
-        if (!isInView) return;
-
-        const controls = {
-            stop: () => {},
-        };
-
-        let animationFrame: number;
-        const animate = (startTime: number | null = null) => {
-            const currentTime = Date.now();
-            if (startTime === null) startTime = currentTime;
-            const progress = Math.min((currentTime - startTime) / (duration * 1000), 1);
-            
-            setCount(Math.floor(progress * value));
-
-            if (progress < 1) {
-                animationFrame = requestAnimationFrame(() => animate(startTime));
-                controls.stop = () => cancelAnimationFrame(animationFrame);
-            }
-        };
-
-        animationFrame = requestAnimationFrame(() => animate());
-        controls.stop = () => cancelAnimationFrame(animationFrame);
-
-        return () => controls.stop();
-    }, [isInView, value, duration]);
-
-    return (
-        <span ref={ref}>
-            {new Intl.NumberFormat('ar-SA').format(count)}
-        </span>
-    );
+/** Splits text into words that slide up from behind a mask. */
+function MaskedWords({ text, baseDelay = 1 }: { text: string; baseDelay?: number }) {
+  return (
+    <>
+      {text.split(" ").map((w, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && " "}
+          <span className="w">
+            <span style={{ ["--d" as string]: i + baseDelay }}>{w}</span>
+          </span>
+        </React.Fragment>
+      ))}
+    </>
+  );
 }
 
-export default function LandingPage() {
-  const [logoUrl, setLogoUrl] = React.useState("https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png");
-  const isClient = useClient();
-  
+/** Adds the staggered-appearance classes to a list item. */
+const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as React.CSSProperties });
+
+export default function HomePage() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [intro, setIntro] = useState<"hidden" | "play" | "lift">("hidden");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  // Intro screen once per visit, then the hero entrance.
+  useEffect(() => {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let seen = false;
+    try { seen = sessionStorage.getItem("intro-seen") === "1"; sessionStorage.setItem("intro-seen", "1"); } catch {}
+    if (seen || reduce) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setLoaded(true)));
+      return;
+    }
+    setIntro("play");
+    const t1 = setTimeout(() => { setIntro("lift"); setLoaded(true); }, 1500);
+    const t2 = setTimeout(() => setIntro("hidden"), 2600);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  // Reveal sections and projects as they scroll into view.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const targets = root.querySelectorAll(".reveal, .project");
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+      targets.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }), { threshold: 0.15, rootMargin: "0px 0px -8% 0px" });
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  // Thin reading-progress bar.
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Dark mode shares the dashboard's setting (localStorage "theme" + html.dark).
+  useEffect(() => { setDark(document.documentElement.classList.contains("dark")); }, []);
+  const toggleTheme = () => {
+    const next = !dark;
+    document.documentElement.classList.toggle("dark", next);
+    try { localStorage.setItem("theme", next ? "dark" : "light"); } catch {}
+    setDark(next);
+  };
+
+  const words = [...P.interests, ...P.skills.map((g) => g.group)];
+  const nav = [
+    { href: "#work", label: "وش أبني" },
+    { href: "#about", label: "نبذة" },
+    { href: "#experience", label: "خبراتي" },
+    { href: "#skills", label: "مهاراتي" },
+    { href: "#contact", label: "تواصل معي" },
+  ];
+
   return (
-    <div className="bg-background text-foreground text-right">
-        {/* Header */}
-        <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-                <Image src={logoUrl} alt="شعار أحمد الحربي" width={32} height={32} priority />
-                <h1 className="text-lg font-bold">أحمد الحربي</h1>
+    <div className="pf" ref={rootRef}>
+      <div className={loaded ? "loaded" : undefined}>
+        {intro !== "hidden" && (
+          <div className={`intro play ${intro === "lift" ? "lift" : ""}`} aria-hidden="true">
+            <div className="intro-name"><MaskedWords text={P.name} baseDelay={0} /></div>
+            <div className="intro-line" />
+          </div>
+        )}
+
+        <div className="progress" ref={progressRef} aria-hidden="true" />
+
+        <div className="pf-sticky">
+          <a className="skip" href="#main">تخطَّ إلى المحتوى</a>
+          <header className="site-header">
+            <div className="container nav">
+              <a href="#" className="logo" aria-label={`${P.name} - الرئيسية`}>
+                <span className="logo-mark">أ</span>
+                <span>{P.name}<small lang="en">{P.nameEn}</small></span>
+              </a>
+              <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
+                <a href="#" className="active" onClick={() => setMenuOpen(false)}>الرئيسية</a>
+                {nav.map((n) => <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)}>{n.label}</a>)}
+              </nav>
+              <div className="nav-actions">
+                <button className="icon-btn" onClick={toggleTheme} aria-label="تبديل الوضع الليلي">{dark ? "☀️" : "🌙"}</button>
+                <button className="icon-btn menu-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="القائمة">☰</button>
+              </div>
             </div>
-             <nav className="flex items-center gap-2">
-                <Button asChild variant="outline" >
-                    <Link href="/support/submit">
-                      <Mail className="ml-2 h-4 w-4" />
-                      تواصل معي
-                    </Link>
-                </Button>
-            </nav>
-        </header>
+          </header>
+        </div>
 
-        {/* Hero Section */}
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center flex flex-col items-center justify-center">
-            <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight"
-            >
-                شريكك الإبداعي والتقني
-            </motion.h1>
-            <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground"
-            >
-                أحوّل أفكارك لواقع رقمي. أقدم لك حلول مبتكرة في مجالات مختلفة عشان أساعدك تحقق أهدافك.
-            </motion.p>
-             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-8"
-            >
-                <Button asChild size="lg">
-                    <Link href="/support/submit">
-                        ابدأ مشروعك معاي
-                    </Link>
-                </Button>
-            </motion.div>
-        </main>
-        
-        {/* Stats Section */}
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-            <div className="space-y-16">
-                 <motion.div 
-                     initial={{ opacity: 0, x: 100 }}
-                     whileInView={{ opacity: 1, x: 0 }}
-                     transition={{ duration: 0.7, ease: "easeOut" }}
-                     viewport={{ once: true }}
-                     className="grid md:grid-cols-2 gap-12 items-center"
-                 >
-                     <div className="order-2 md:order-1">
-                        <h3 className="text-2xl font-bold mb-4">مبيعات قياسية ونتائج ملموسة</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            الأرقام هي شهادة على الإنجاز. هذا المبلغ يمثل العوائد المالية التي حققتها، كأحمد الحربي، من خلال المشاريع والمتاجر التي طورتها لعملائي. كل ريال هنا هو قصة نجاح وهدف تحقق.
-                        </p>
-                    </div>
-                    <div className="text-center order-1 md:order-2">
-                        <p className="text-7xl md:text-9xl font-extrabold text-primary">
-                           {isClient ? <AnimatedCounter value={30000} /> : '30,000+'}
-                        </p>
-                         <p className="text-xl text-muted-foreground mt-2">ريال سعودي</p>
-                    </div>
-                 </motion.div>
-
-                 <motion.div 
-                     initial={{ opacity: 0, x: -100 }}
-                     whileInView={{ opacity: 1, x: 0 }}
-                     transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
-                     viewport={{ once: true }}
-                     className="grid md:grid-cols-2 gap-12 items-center"
-                 >
-                    <div className="order-2 md:order-2">
-                        <h3 className="text-2xl font-bold mb-4">أخدم شبكة عملاء واسعة ومتنوعة</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            أفخر بخدمة أكثر من 600 عميل، وهذي شهادة على الثقة والنجاح المشترك. هذي الشراكات هي نتاج شغل جامد في تطوير مشاريع فريدة، وإطلاق متاجر إلكترونية ناجحة، وتنفيذ مبادرات شخصية مبتكرة. كل عميل هو جزء من قصة نجاحي.
-                        </p>
-                    </div>
-                    <div className="text-center order-1 md:order-1">
-                        <p className="text-7xl md:text-9xl font-extrabold text-primary">
-                            {isClient ? <AnimatedCounter value={600} /> : '600+'}
-                        </p>
-                        <p className="text-xl text-muted-foreground mt-2">عميل سعيد</p>
-                    </div>
-                 </motion.div>
-            </div>
-        </section>
-
-        {/* Clients Section */}
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-             <motion.div 
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                viewport={{ once: true }}
-                className="bg-muted/50 rounded-2xl p-8 md:p-12"
-            >
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                    <div className="space-y-4">
-                        <h2 className="text-3xl font-bold">انضم لقائمة عملائي المميزين</h2>
-                        <p className="text-muted-foreground">
-                            أنا ما أبني مشاريع وبس، أنا أبني شراكات نجاح. خلّك عميلي الجاي اللي أحتفل بقصته.
-                        </p>
-                        <Button asChild size="lg">
-                           <Link href="/support/submit">
-                                كن عميلي التالي
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                    <div className="flex justify-center md:justify-end items-center -space-x-8 rtl:space-x-reverse">
-                         <Image
-                            data-ai-hint="logo abstract"
-                            className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-lg"
-                            src="https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551493/JNHhOktm_400x400_vtd7y1.jpg"
-                            alt="عميل 1"
-                            width={96}
-                            height={96}
-                        />
-                        <Image
-                            data-ai-hint="logo modern"
-                            className="w-28 h-28 rounded-full object-cover border-4 border-background shadow-lg z-10"
-                             src="https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551813/%D8%A8%D9%88%D9%86%D9%8A%D8%AA%D8%A7_vtqnfm.png"
-                            alt="شعار بونيتا"
-                            width={112}
-                            height={112}
-                        />
-                         <Image
-                            data-ai-hint="logo minimal"
-                            className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-lg"
-                             src="https://res.cloudinary.com/dw5sydtj6/image/upload/v1758552110/%D8%A8%D8%A7%D9%86%D8%AF%D8%A7_w3rd0e.png"
-                            alt="شعار باندا"
-                            width={96}
-                            height={96}
-                        />
-                    </div>
+        <main id="main">
+          {/* الواجهة */}
+          <section className="hero pf-hero">
+            <div className="container">
+              <div className="eyebrow name-en intro-anim" style={{ ["--d" as string]: 0 }}>{P.nameEn}</div>
+              <h1 className="hero-title"><MaskedWords text={P.name} /></h1>
+              <div className="pf-role intro-anim" style={{ ["--d" as string]: 5 }}>{P.role}</div>
+              <div className="hero-sub intro-anim" style={{ ["--d" as string]: 7 }}>
+                <div>
+                  <p>{P.intro}</p>
+                  <p className="intro-en" lang="en" dir="ltr">{P.introEn}</p>
                 </div>
-            </motion.div>
-        </section>
-
-
-         {/* Footer */}
-        <footer className="py-8 container mx-auto px-4 sm:px-6 lg:px-8">
-             <div className="bg-card text-card-foreground rounded-2xl p-8 md:p-12 text-center space-y-6 shadow-lg border">
-                <h2 className="text-3xl font-bold">عندك فكرة مشروع؟</h2>
-                <p className="text-muted-foreground max-w-xl mx-auto">
-                    لا تتردد بالتواصل معي، أنا هنا لمساعدتك على تحويلها إلى واقع.
-                </p>
-                <Button size="lg" asChild>
-                    <Link href="/support/submit">
-                        <Mail className="ml-2 h-4 w-4" />
-                        تواصل معي الآن
-                    </Link>
-                </Button>
+                <div className="hero-cta">
+                  <a href="#work" className="btn btn-primary">وش أبني</a>
+                  <a href="#contact" className="btn btn-ghost">تواصل معي</a>
+                </div>
+              </div>
+              <div className="facts intro-anim" style={{ ["--d" as string]: 9 }}>
+                <span>{P.fullName}</span>
+                <span>📍 {P.city}</span>
+                {P.available && <span className="avail"><i /> متاح للتعاون</span>}
+              </div>
             </div>
-            <div className="text-center text-sm text-muted-foreground pt-8">
-                <p>&copy; {new Date().getFullYear()} أحمد الحربي. جميع الحقوق محفوظة.</p>
+          </section>
+
+          {/* شريط الكلمات المتحرك */}
+          <div className="marquee" aria-hidden="true">
+            <div className="marquee-track">
+              {[...words, ...words].map((w, i) => <span key={i}>{w}</span>)}
             </div>
+          </div>
+
+          {/* الأعمال */}
+          <section id="work" className="reveal">
+            <div className="container">
+              <div className="sec-head">
+                <div><div className="eyebrow">٠١ · What I Build</div><h2>وش أبني</h2></div>
+                <p>منتجات بنيتها وأطلقتها.</p>
+              </div>
+              <div className="projects">
+                {P.projects.map((p, i) => (
+                  <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
+                    <div className={`project-cover ${p.bg}`}>
+                      <span className="cover-ar">{p.title}</span>
+                      <span className="cover-en" lang="en">{p.titleEn}</span>
+                    </div>
+                    <div className="project-body">
+                      <span className="chip">{p.label}</span>
+                      <h3>{p.title} <small lang="en">{p.titleEn}</small></h3>
+                      <p>{p.desc}</p>
+                      <ul className="points">{p.points.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>
+                      <div className="tags">{p.tags.map((t) => <span key={t} className="chip sky">{t}</span>)}</div>
+                      {p.link && <a className="btn btn-ghost" href={p.link} target="_blank" rel="noopener">زيارة الموقع ↗</a>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* النبذة والإنجازات */}
+          <section id="about" className="soft reveal">
+            <div className="container split">
+              <div className="split-head"><div className="eyebrow">٠٢</div><h2>نبذة عني</h2></div>
+              <div>
+                <div className="pf-about">{P.about.map((t) => <p key={t}>{t}</p>)}</div>
+                <div className="stats">
+                  {P.achievements.map((s, i) => <div key={s.label} {...st(i)}><b>{s.value}</b><span>{s.label}</span></div>)}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* الخبرات */}
+          <section id="experience" className="reveal">
+            <div className="container split">
+              <div className="split-head"><div className="eyebrow">٠٣</div><h2>الخبرات والتعليم</h2></div>
+              <ol className="timeline">
+                {P.experience.map((e, i) => (
+                  <li key={e.title} {...st(i)}>
+                    <span className="period">{e.period}</span>
+                    <div>
+                      <h3>{e.title}{e.place && <small> · {e.place}</small>}</h3>
+                      {e.points.length > 0 && <ul>{e.points.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          {/* المهارات */}
+          <section id="skills" className="soft reveal">
+            <div className="container">
+              <div className="sec-head"><div><div className="eyebrow">٠٤</div><h2>مهاراتي</h2></div></div>
+              <div className="skills">
+                {P.skills.map((g, i) => (
+                  <div key={g.group} className="skill-group st" style={{ ["--i" as string]: i }}>
+                    <span className="num">٠{arNum(i + 1)}</span>
+                    <h3>{g.group}</h3>
+                    <ul>{g.items.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>
+                  </div>
+                ))}
+              </div>
+              <div className="extras">
+                <div>
+                  <h3>اللغات</h3>
+                  <ul className="langs">{P.languages.map((l, i) => <li key={l.name} {...st(i)}><b>{l.name}</b><span>{l.level}</span></li>)}</ul>
+                </div>
+                <div>
+                  <h3>اهتماماتي</h3>
+                  <div className="interests">{P.interests.map((x, i) => <span key={x} className="pill st" style={{ ["--i" as string]: i }}>{x}</span>)}</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* التواصل */}
+          <section id="contact" className="reveal">
+            <div className="container contact">
+              <div className="eyebrow">٠٥ · تواصل معي</div>
+              <h2>عندك فكرة أو فرصة؟<br />خلنا نتكلم.</h2>
+              <a className="contact-email" href={`mailto:${P.contact.email}`}>{P.contact.email}</a>
+              <div className="contact-links">
+                <Link className="btn btn-primary" href="/support/submit">اطلب مشروع</Link>
+                {P.contact.links.map((l, i) => (
+                  <a key={l.label} className="btn btn-ghost st" style={{ ["--i" as string]: i }} href={l.url}
+                    {...(l.url.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>
+                    {l.label} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer className="site-footer">
+          <div className="container">
+            <div className="foot-grid">
+              <div>
+                <a href="#" className="logo"><span className="logo-mark">أ</span><span>{P.name}</span></a>
+                <p style={{ marginTop: 12, maxWidth: 380 }}>{P.intro}</p>
+              </div>
+              <div>
+                <h5>روابط</h5>
+                <ul>
+                  {nav.map((n) => <li key={n.href}><a href={n.href}>{n.label}</a></li>)}
+                  <li><Link href="/bio">صفحة روابطي</Link></li>
+                </ul>
+              </div>
+            </div>
+            <div className="copy">
+              <span>© {new Date().getFullYear()} {P.name}</span>
+              <Link href="/admin">لوحة التحكم</Link>
+            </div>
+          </div>
         </footer>
+      </div>
     </div>
   );
 }
