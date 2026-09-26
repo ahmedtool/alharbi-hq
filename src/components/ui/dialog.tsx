@@ -39,7 +39,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Phones: a bottom sheet that scrolls when the form is long. From sm up: the usual centered dialog.
-        "fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[92dvh] overflow-y-auto gap-4 rounded-t-2xl border bg-background p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom " +
+        "fixed inset-x-0 bottom-[var(--kb,0px)] z-50 grid w-full max-h-[calc(100dvh-var(--kb,0px)-env(safe-area-inset-top)-1rem)] overflow-y-auto overscroll-contain gap-4 rounded-t-2xl border bg-background p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom " +
         "sm:inset-x-auto sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:max-w-lg sm:max-h-[calc(100dvh-4rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-6 sm:data-[state=closed]:fade-out-0 sm:data-[state=open]:fade-in-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
         className
       )}

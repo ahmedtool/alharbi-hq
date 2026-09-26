@@ -32,6 +32,13 @@ const useIdleLogout = (timeout = 600000) => { // 10 minutes default
       clearTimeout(idleTimer.current);
     }
     
+    // The installed app (home-screen icon) relies on the phone's own lock screen,
+    // so it stays signed in; the idle logout only applies in a normal browser tab.
+    const isInstalledApp =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (isInstalledApp) return;
+
     const isAdminPage = pathname === '/admin';
     const isAuthenticated = !!localStorage.getItem('authenticatedUser');
 

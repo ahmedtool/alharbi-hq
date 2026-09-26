@@ -30,7 +30,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
     const [isVerified, setIsVerified] = useState(false);
     const isClient = useClient();
 
-    useIdleLogout(10 * 60 * 1000); // 10 minutes
+    useIdleLogout(60 * 60 * 1000); // one hour in a browser tab; never in the installed app
 
     useEffect(() => {
         if (!isClient) {
