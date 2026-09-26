@@ -16,7 +16,7 @@ export const navLinks = [
       { name: "الدعم الفني", href: "/support", icon: LifeBuoy },
       { name: "مركز الأفكار", href: "/ideas", icon: Lightbulb },
       { name: "المساعد الذكي", href: "/ai-assistant", icon: MessageCircle },
-      { name: "صفحة الروابط (Bio)", href: "/bio", icon: Link2 },
+      { name: "صفحة الروابط", href: "/bio-preview", icon: Link2 },
     ]
   },
   {
