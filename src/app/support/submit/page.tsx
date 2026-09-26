@@ -215,7 +215,7 @@ export default function SubmitTicketPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                         <Card className="w-full max-w-lg shadow-2xl">
+                         <Card className="w-full max-w-lg shadow-none">
                             <CardHeader className="items-center">
                                 <motion.div 
                                     initial={{ scale: 0 }}
@@ -255,7 +255,7 @@ export default function SubmitTicketPage() {
             <AnimatePresence mode="wait">
                 {currentStep === 1 && (
                      <motion.div key="step1" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full max-w-2xl mt-20">
-                        <Card className="w-full shadow-xl">
+                        <Card className="w-full shadow-none">
                             <CardHeader>
                                 <CardTitle>الخطوة 1: معلومات التواصل</CardTitle>
                                 <CardDescription>نحتاج إلى معلوماتك الأساسية للتواصل معك بخصوص طلبك.</CardDescription>
@@ -299,7 +299,7 @@ export default function SubmitTicketPage() {
 
                  {currentStep === 2 && (
                     <motion.div key="step2" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full max-w-2xl mt-20">
-                        <Card className="w-full shadow-xl">
+                        <Card className="w-full shadow-none">
                             <CardHeader>
                                 <CardTitle>الخطوة 2: تفاصيل الطلب</CardTitle>
                                 <CardDescription>الرجاء تقديم تفاصيل دقيقة حول طلبك.</CardDescription>

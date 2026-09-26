@@ -20,10 +20,10 @@ export function PageHeader({ title, description, children, className }: PageHead
 
   return (
     <>
-    <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8", className)}>
+    <div className={cn("rule-draw flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-10 pb-5", className)}>
       <div className="grid gap-1 flex-1">
         <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold md:text-3xl font-headline tracking-tight">{title}</h1>
+            <h1 className="text-3xl font-bold md:text-4xl font-headline tracking-tight">{title}</h1>
         </div>
         {description && <p className="text-base text-muted-foreground">{description}</p>}
       </div>

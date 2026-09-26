@@ -72,7 +72,7 @@ export default function WhoAmIPage() {
           </header>
 
           {imageUrl && (
-            <div className="relative w-full h-64 sm:h-80 md:h-96 mb-8 rounded-lg overflow-hidden shadow-lg">
+            <div className="relative w-full h-64 sm:h-80 md:h-96 mb-8 rounded-lg overflow-hidden shadow-none">
               <Image src={imageUrl} alt="من أنا" layout="fill" objectFit="cover" priority />
             </div>
           )}
@@ -108,7 +108,7 @@ export default function WhoAmIPage() {
              <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-2">📖 مقالات أخرى قد تعجبك</h2>
              <div className="max-w-2xl mx-auto">
                  {otherPosts.map(post => (
-                     <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                     <Card key={post.id} className="hover:border-foreground/40 transition-shadow">
                          <div className="grid md:grid-cols-3 gap-0">
                              <div className="md:col-span-1 relative min-h-[150px] md:min-h-full">
                                  <Image src={post.imageUrl} alt={post.title} layout="fill" objectFit="cover" className="rounded-t-lg md:rounded-r-lg md:rounded-l-none"/>

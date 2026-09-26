@@ -58,7 +58,7 @@ const Sidebar = React.forwardRef<
         <aside
           ref={ref}
           className={cn(
-            "group flex h-screen flex-col justify-between overflow-y-auto bg-sidebar text-sidebar-foreground",
+            "group flex h-screen flex-col justify-between overflow-y-auto border-l border-sidebar-border bg-sidebar text-sidebar-foreground",
             collapsible
               ? "data-[collapsed=false]:w-60 data-[collapsed=true]:w-14"
               : "w-60",

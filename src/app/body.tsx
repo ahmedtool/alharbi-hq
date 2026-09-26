@@ -78,7 +78,9 @@ function AuthGuard({ children }: { children: ReactNode }) {
         return null; 
     }
     
-    return <>{children}</>;
+    // Every page enters with the same soft motion as the home page (which has its own intro).
+    if (pathname === '/') return <>{children}</>;
+    return <div key={pathname} className="page-enter">{children}</div>;
 }
 
 

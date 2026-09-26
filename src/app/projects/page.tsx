@@ -385,7 +385,7 @@ export default function ProjectsPage() {
             {projects.map((project) => (
                 <Card 
                     key={project.id} 
-                    className="flex flex-col hover:shadow-md transition-shadow cursor-pointer"
+                    className="flex flex-col hover:border-foreground/40 transition-shadow cursor-pointer"
                     onClick={() => router.push(`/projects/${project.id}`)}
                 >
                     <CardHeader>

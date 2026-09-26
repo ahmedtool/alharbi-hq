@@ -67,7 +67,7 @@ export default function PublicToolsPage() {
                                 <h2 className="text-2xl font-bold mb-6">{category}</h2>
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {toolList.map(tool => (
-                                        <Card key={tool.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                                        <Card key={tool.id} className="hover:border-foreground/40 transition-shadow h-full flex flex-col">
                                             <CardHeader>
                                                 <CardTitle className="truncate">{tool.name}</CardTitle>
                                                 <CardDescription className="line-clamp-2 h-10">{tool.description}</CardDescription>

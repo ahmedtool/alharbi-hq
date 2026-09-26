@@ -207,7 +207,7 @@ export default function SubmitTicketPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                         <Card className="w-full max-w-lg shadow-2xl">
+                         <Card className="w-full max-w-lg shadow-none">
                             <CardHeader className="items-center">
                                 <motion.div 
                                     initial={{ scale: 0 }}
@@ -237,7 +237,7 @@ export default function SubmitTicketPage() {
              <div className="absolute top-6">
                 <Image src="https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png" alt="Logo" width={48} height={48}/>
             </div>
-            <Card className="w-full max-w-2xl shadow-xl mt-20">
+            <Card className="w-full max-w-2xl shadow-none mt-20">
                 <CardHeader>
                     <CardTitle>تواصل معنا</CardTitle>
                     <CardDescription>إذا كان لديك أي استفسار أو تحتاج إلى مساعدة، الرجاء تعبئة النموذج أدناه.</CardDescription>

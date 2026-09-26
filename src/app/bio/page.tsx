@@ -119,7 +119,7 @@ export default function BioPage() {
                         alt={`شعار ${pageData.name}`}
                         width={96}
                         height={96}
-                        className="rounded-full border-4 border-background shadow-lg mb-4"
+                        className="rounded-full border-4 border-background shadow-none mb-4"
                         priority
                     />
                 </motion.div>
