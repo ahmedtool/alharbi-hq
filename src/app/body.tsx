@@ -4,8 +4,7 @@
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useIdleLogout from '@/hooks/use-idle-logout';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import useClient from '@/hooks/use-client';
 
@@ -43,22 +42,25 @@ function AuthGuard({ children }: { children: ReactNode }) {
              return;
         }
 
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Check if user's UID matches the one stored in localStorage after PIN verification
-                const isAuthenticated = localStorage.getItem('authenticatedUser') === user.uid;
-
-                if (isAuthenticated) {
-                    setIsVerified(true);
-                } else {
-                    localStorage.removeItem('authenticatedUser');
-                    router.replace('/admin');
-                }
+        let cancelled = false;
+        const allowOrRedirect = (userId: string | undefined) => {
+            if (cancelled) return;
+            if (userId) {
+                localStorage.setItem('authenticatedUser', userId);
+                setIsVerified(true);
             } else {
                 localStorage.removeItem('authenticatedUser');
+                setIsVerified(false);
                 router.replace('/admin');
             }
+        };
+
+        supabase.auth.getSession().then(({ data }) => allowOrRedirect(data.session?.user.id));
+        const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') allowOrRedirect(undefined);
+            else if (session) allowOrRedirect(session.user.id);
         });
+        const unsubscribe = () => { cancelled = true; sub.subscription.unsubscribe(); };
 
         return () => unsubscribe();
     }, [pathname, router, isClient]);

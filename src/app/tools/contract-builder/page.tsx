@@ -22,6 +22,8 @@ import useClient from "@/hooks/use-client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AmiriFont } from '@/lib/fonts/amiri-font';
+import { sendContractEmail } from "./actions";
+import { getAccessToken } from "@/lib/auth";
 
 interface ScopeItem {
   id: number;
@@ -182,29 +184,14 @@ export default function ContractBuilderPage() {
                 </div>
             `;
 
-            // استخدام معرّف المشروع الفعلي us-central1-my-cockpit-vu7m6
-            const functionUrl = 'https://us-central1-my-cockpit-vu7m6.cloudfunctions.net/sendEmail';
-            
-            const response = await fetch(functionUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    to: clientEmail,
-                    subject: `عقد تقديم خدمات - ${providerName}`,
-                    htmlBody: emailHtml,
-                    fromName: providerName
-                })
-            });
+            const result = await sendContractEmail({
+                to: clientEmail,
+                subject: `عقد تقديم خدمات - ${providerName}`,
+                htmlBody: emailHtml,
+                fromName: providerName
+            }, (await getAccessToken()) ?? "");
 
-            if (response.status === 404) {
-                throw new Error("رابط خدمة الإرسال غير موجود (404). هل قمت بنشر الدوال باستخدام firebase deploy؟");
-            }
-
-            const result = await response.json();
-
-            if (response.ok && result.success) {
+            if (result.success) {
                 toast({ title: "تم إرسال الإيميل للعميل بنجاح!", description: "ستصل العميل رسالة احترافية تحتوي على ملخص العقد." });
                 setIsEmailDialogOpen(false);
             } else {
@@ -215,7 +202,7 @@ export default function ContractBuilderPage() {
             toast({ 
                 variant: 'destructive', 
                 title: 'فشل في عملية الإرسال', 
-                description: error.message || 'تأكد من نشر الدوال (Functions) واتصال الإنترنت.' 
+                description: error.message || 'تأكد من اتصال الإنترنت.' 
             });
         } finally {
             setIsSendingEmail(false);

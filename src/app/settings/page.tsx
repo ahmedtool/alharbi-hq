@@ -8,8 +8,7 @@ import { Loader2, RefreshCcw, Download, Upload, ShieldCheck, KeyRound } from "lu
 import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { exportData, importData } from "./data-actions";
-import { updatePin } from "./actions";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { updatePassword } from "./actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -135,13 +134,13 @@ export default function SettingsPage() {
     }
     
     const handleUpdatePin = async () => {
-        if (currentPin.length !== 4 || newPin.length !== 4) {
-            toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال رمز PIN مكون من 4 أرقام." });
+        if (!currentPin || !newPin) {
+            toast({ variant: "destructive", title: "خطأ", description: "الرجاء إدخال كلمة المرور الحالية والجديدة." });
             return;
         }
         setIsUpdatingPin(true);
         try {
-            const result = await updatePin(currentPin, newPin);
+            const result = await updatePassword(currentPin, newPin);
             if (result.success) {
                 toast({ title: "نجاح", description: result.message });
                 setCurrentPin("");
@@ -163,43 +162,25 @@ export default function SettingsPage() {
             <div className="max-w-xl space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><KeyRound/> إدارة رمز الدخول (PIN)</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><KeyRound/> تغيير كلمة المرور</CardTitle>
                         <CardDescription>
-                            يمكنك تحديث رمز الدخول السري للوحة التحكم من هنا.
+                            حدّث كلمة مرور الدخول للوحة التحكم (8 أحرف على الأقل).
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                         <div>
-                            <Label htmlFor="current-pin">رمز PIN الحالي</Label>
-                            <div className="flex justify-center" dir="ltr">
-                                <InputOTP id="current-pin" maxLength={4} value={currentPin} onChange={setCurrentPin}>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={0} />
-                                        <InputOTPSlot index={1} />
-                                        <InputOTPSlot index={2} />
-                                        <InputOTPSlot index={3} />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="current-pin">كلمة المرور الحالية</Label>
+                            <Input id="current-pin" type="password" dir="ltr" autoComplete="current-password" value={currentPin} onChange={(e) => setCurrentPin(e.target.value)} />
                         </div>
-                         <div>
-                            <Label htmlFor="new-pin">رمز PIN الجديد</Label>
-                             <div className="flex justify-center" dir="ltr">
-                                <InputOTP id="new-pin" maxLength={4} value={newPin} onChange={setNewPin}>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={0} />
-                                        <InputOTPSlot index={1} />
-                                        <InputOTPSlot index={2} />
-                                        <InputOTPSlot index={3} />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="new-pin">كلمة المرور الجديدة</Label>
+                            <Input id="new-pin" type="password" dir="ltr" autoComplete="new-password" value={newPin} onChange={(e) => setNewPin(e.target.value)} />
                         </div>
                     </CardContent>
                     <CardFooter>
-                         <Button onClick={handleUpdatePin} disabled={isUpdatingPin || currentPin.length < 4 || newPin.length < 4}>
+                         <Button onClick={handleUpdatePin} disabled={isUpdatingPin || !currentPin || newPin.length < 8}>
                             {isUpdatingPin ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ShieldCheck className="ml-2 h-4 w-4"/>}
-                            {isUpdatingPin ? "جاري التحديث..." : "تحديث الرمز"}
+                            {isUpdatingPin ? "جاري التحديث..." : "تحديث كلمة المرور"}
                         </Button>
                     </CardFooter>
                 </Card>

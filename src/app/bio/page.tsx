@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Mail, Link as LinkIcon, Search, Hash, Loader2, ArrowLeft, ExternalLink, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '@/lib/db';
+import { collection, query, where, getDocs, limit } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 

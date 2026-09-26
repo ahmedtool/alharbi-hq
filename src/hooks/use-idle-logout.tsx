@@ -4,8 +4,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
-import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { auth, signOut } from '@/lib/auth';
 
 const useIdleLogout = (timeout = 600000) => { // 10 minutes default
   const router = useRouter();

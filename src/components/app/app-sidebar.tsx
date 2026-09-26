@@ -46,9 +46,9 @@ import {
   Hash,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { db } from "@/lib/db";
+import { doc, getDoc, collection, query, where, onSnapshot } from "@/lib/db";
+import { auth, signOut } from "@/lib/auth";
 
 
 export function AppSidebar() {

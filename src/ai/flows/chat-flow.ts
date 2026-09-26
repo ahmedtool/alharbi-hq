@@ -8,11 +8,11 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { chatHistorySchema } from '@/ai/schemas/chat-schema';
-import { collection, getDocs, QuerySnapshot, DocumentData } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, getDocs, dbFor, type Db, type QuerySnapshot } from '@/lib/db';
+import { supabaseForToken, userForToken } from '@/lib/supabase';
 
 // Helper function to safely stringify and format collection data
-async function formatCollectionData(name: string, querySnapshot: QuerySnapshot<DocumentData, DocumentData>): Promise<string> {
+async function formatCollectionData(name: string, querySnapshot: QuerySnapshot): Promise<string> {
     if (querySnapshot.empty) {
         return `// No data for ${name}\n[]`;
     }
@@ -21,8 +21,8 @@ async function formatCollectionData(name: string, querySnapshot: QuerySnapshot<D
 }
 
 
-// Fetches all relevant data from Firestore and formats it as a JSON string for the prompt.
-async function fetchAllDataForPrompt(): Promise<string> {
+// Fetches all relevant data from the database and formats it as a JSON string for the prompt.
+async function fetchAllDataForPrompt(db: Db): Promise<string> {
     const collectionsToFetch = [
       'clients',
       'projects',
@@ -48,9 +48,16 @@ async function fetchAllDataForPrompt(): Promise<string> {
 }
 
 
-export async function chat(history: z.infer<typeof chatHistorySchema>): Promise<string> {
-    // 1. Fetch the live data from Firestore.
-    const dataContext = await fetchAllDataForPrompt();
+export async function chat(history: z.infer<typeof chatHistorySchema>, accessToken: string): Promise<string> {
+    // Server actions are public endpoints: only answer a signed-in user, and read
+    // the data as that user so the database rules decide what they can see.
+    const user = await userForToken(accessToken);
+    if (!user) {
+        throw new Error('Not signed in');
+    }
+
+    // 1. Fetch the live data.
+    const dataContext = await fetchAllDataForPrompt(dbFor(supabaseForToken(accessToken)));
 
     // 2. Generate a response using the data as context.
     const response = await ai.generate({

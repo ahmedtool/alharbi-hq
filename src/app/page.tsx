@@ -7,8 +7,8 @@ import { Mail, Users, ArrowLeft, TrendingUp } from "lucide-react";
 import Link from 'next/link';
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { doc, getDoc } from "@/lib/db";
 import useClient from "@/hooks/use-client";
 
 function AnimatedCounter({ value, duration = 2 }: { value: number, duration?: number }) {

@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Library, Link as LinkIcon } from "lucide-react";
 import { tools as staticTools } from './tools';
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, getDocs, query } from "@/lib/db";
 
 interface ToolForClient {
     id: string;

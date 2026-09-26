@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, addDoc, getDocs, doc, deleteDoc } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";

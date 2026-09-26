@@ -11,8 +11,9 @@ import { chat } from "@/ai/flows/chat-flow";
 import { z } from "genkit";
 import { chatHistorySchema } from "@/ai/schemas/chat-schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { doc, getDoc } from "@/lib/db";
+import { getAccessToken } from "@/lib/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,7 +66,7 @@ export default function AiAssistantPage() {
             content: [{ text: msg.text }]
         }));
 
-      const botResponse = await chat(currentHistory);
+      const botResponse = await chat(currentHistory, (await getAccessToken()) ?? "");
       const botMessage: Message = { id: Date.now() + 1, text: botResponse, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
 

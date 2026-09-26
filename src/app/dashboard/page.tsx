@@ -32,15 +32,15 @@ import {
   Link2,
   Hash,
 } from "lucide-react";
-import { db, auth } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, getDocs, query, where, orderBy, limit } from "@/lib/db";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ClientNumberFormat } from "@/components/app/client-number-format";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { signOut } from "firebase/auth";
+import { auth, signOut } from "@/lib/auth";
 
 const navLinks = [
   {

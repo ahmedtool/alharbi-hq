@@ -3,8 +3,8 @@
 
 import * as React from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, updateDoc, query, orderBy, Timestamp, getDocs, addDoc, setDoc, where, limit, deleteDoc, writeBatch } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, doc, getDoc, updateDoc, query, orderBy, Timestamp, getDocs, addDoc, setDoc, where, limit, deleteDoc, writeBatch } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Package, FileText, CheckCircle, Trash2 } from "lucide-react";

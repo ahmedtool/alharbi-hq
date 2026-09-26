@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp, where, query, limit, runTransaction, getDoc } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp, where, query, limit, getDoc } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal, Trash2 } from "lucide-react";

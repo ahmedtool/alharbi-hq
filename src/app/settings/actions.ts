@@ -1,39 +1,22 @@
+import { supabase } from "@/lib/supabase";
 
-'use server';
-
-import { db } from "@/lib/firebase-admin";
-
-async function getPinFromFirestore(): Promise<string | null> {
-    try {
-        const docSnap = await db.collection("app_config").doc("security").get();
-        const loginPin = docSnap.data()?.loginPin;
-        return typeof loginPin === "string" && loginPin ? loginPin : null;
-    } catch (error) {
-        console.error("Error fetching PIN from Firestore:", error);
-        return null;
+/** Changes the signed-in user's password after re-checking the current one. */
+export async function updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    if (newPassword.length < 8) {
+        return { success: false, message: "كلمة المرور الجديدة لازم تكون 8 أحرف على الأقل." };
     }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+        return { success: false, message: "لازم تكون مسجّل دخول." };
+    }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+    if (signInError) {
+        return { success: false, message: "كلمة المرور الحالية غير صحيحة." };
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+        console.error("Error updating password:", error);
+        return { success: false, message: "تعذّر تحديث كلمة المرور." };
+    }
+    return { success: true, message: "تم تحديث كلمة المرور بنجاح!" };
 }
-
-export async function updatePin(currentPin: string, newPin: string): Promise<{ success: boolean; message: string }> {
-    // 1. Try to get PIN from Firestore
-    // 2. If not in Firestore, fall back to environment variable
-    const serverPin = (await getPinFromFirestore()) ?? process.env.LOGIN_PIN;
-    
-    // 3. If no PIN is set anywhere, deny access
-    if (!serverPin) {
-        return { success: false, message: 'لم يتم تعيين رمز PIN على الخادم.' };
-    }
-
-    if (currentPin !== serverPin) {
-        return { success: false, message: 'رمز PIN الحالي غير صحيح.' };
-    }
-
-    try {
-        await db.collection("app_config").doc("security").set({ loginPin: newPin }, { merge: true });
-        return { success: true, message: 'تم تحديث رمز PIN بنجاح!' };
-    } catch (error) {
-        console.error("Error updating PIN in Firestore:", error);
-        return { success: false, message: 'حدث خطأ أثناء تحديث الرمز في قاعدة البيانات.' };
-    }
-}
-

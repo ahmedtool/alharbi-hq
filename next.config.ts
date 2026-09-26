@@ -56,6 +56,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        // Files uploaded before the move to Supabase
+        protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
         port: '',
         pathname: '/**',

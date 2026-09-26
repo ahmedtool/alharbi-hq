@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc, deleteDoc, getDoc, writeBatch } from "firebase/firestore";
+import { db } from "@/lib/db";
+import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc, deleteDoc, getDoc, writeBatch } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import {
   Table,
