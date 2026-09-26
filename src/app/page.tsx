@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PROFILE } from "./_portfolio/profile";
+import { logoAt } from "@/lib/brand";
 import "./portfolio.css";
 
 const P = PROFILE;
@@ -100,6 +101,7 @@ export default function HomePage() {
       <div className={loaded ? "loaded" : undefined}>
         {intro !== "hidden" && (
           <div className={`intro play ${intro === "lift" ? "lift" : ""}`} aria-hidden="true">
+            <img className="intro-logo" src={logoAt(192)} alt="" width={72} height={72} />
             <div className="intro-name"><MaskedWords text={P.name} baseDelay={0} /></div>
             <div className="intro-line" />
           </div>
@@ -112,7 +114,7 @@ export default function HomePage() {
           <header className="site-header">
             <div className="container nav">
               <a href="#" className="logo" aria-label={`${P.name} - الرئيسية`}>
-                <span className="logo-mark">أ</span>
+                <img className="logo-img" src={logoAt(96)} alt="" width={36} height={36} />
                 <span>{P.name}<small lang="en">{P.nameEn}</small></span>
               </a>
               <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
@@ -267,7 +269,7 @@ export default function HomePage() {
           <div className="container">
             <div className="foot-grid">
               <div>
-                <a href="#" className="logo"><span className="logo-mark">أ</span><span>{P.name}</span></a>
+                <a href="#" className="logo"><img className="logo-img" src={logoAt(96)} alt="" width={36} height={36} /><span>{P.name}</span></a>
                 <p style={{ marginTop: 12, maxWidth: 380 }}>{P.intro}</p>
               </div>
               <div>

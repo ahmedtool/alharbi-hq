@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Home, ArrowRight } from "lucide-react";
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { logoAt } from "@/lib/brand";
 
 
 type PageHeaderProps = {
@@ -22,7 +24,10 @@ export function PageHeader({ title, description, children, className }: PageHead
     <>
     <div className={cn("rule-draw flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-10 pb-5", className)}>
       <div className="grid gap-1 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+            <Link href="/dashboard" title="لوحة التحكم" className="shrink-0">
+                <img src={logoAt(96)} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover bg-muted" />
+            </Link>
             <h1 className="text-3xl font-bold md:text-4xl font-headline tracking-tight">{title}</h1>
         </div>
         {description && <p className="text-base text-muted-foreground">{description}</p>}

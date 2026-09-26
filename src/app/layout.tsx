@@ -7,6 +7,7 @@ import React from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import Body from './body';
 import { DirectionProvider } from '@radix-ui/react-direction';
+import { logoAt } from '@/lib/brand';
 import useClient from '@/hooks/use-client';
 
 
@@ -43,7 +44,11 @@ export default function RootLayout({
         <head>
           <title>أحمد الحربي</title>
           <meta name="description" content="مركز القيادة حقك." />
-          <link rel="icon" href="/favicon.ico" sizes="any" />
+          <link rel="icon" type="image/png" sizes="32x32" href={logoAt(32)} />
+          <link rel="icon" type="image/png" sizes="192x192" href={logoAt(192)} />
+          <link rel="apple-touch-icon" href={logoAt(180)} />
+          <meta property="og:image" content={logoAt(512)} />
+          <meta name="twitter:image" content={logoAt(512)} />
           <meta name="manifest" content="/manifest.json" />
           <meta name="theme-color" content="#09090b" />
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
