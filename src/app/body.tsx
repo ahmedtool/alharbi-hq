@@ -7,9 +7,12 @@ import useIdleLogout from '@/hooks/use-idle-logout';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import useClient from '@/hooks/use-client';
+import { MobileTabBar } from '@/components/app/mobile-tab-bar';
 
 
 const publicPages = ['/admin', '/support/submit', '/bio'];
+// Signed-in pages that aren't part of the dashboard, so they get no bottom tab bar.
+const noTabBar = ['/login', '/verify-login', '/403', '/503'];
 
 // Helper function to check if a path is public.
 function isPublicPage(pathname: string): boolean {
@@ -80,7 +83,9 @@ function AuthGuard({ children }: { children: ReactNode }) {
     
     // Every page enters with the same soft motion as the home page (which has its own intro).
     if (pathname === '/') return <>{children}</>;
-    return <div key={pathname} className="page-enter">{children}</div>;
+    const page = <div key={pathname} className="page-enter">{children}</div>;
+    if (isPublicPage(pathname) || noTabBar.includes(pathname)) return page;
+    return <>{page}<MobileTabBar /></>;
 }
 
 

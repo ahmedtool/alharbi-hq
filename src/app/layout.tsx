@@ -1,6 +1,7 @@
 
 "use client";
 
+import { RegisterServiceWorker } from "@/components/app/register-sw";
 import './globals.css';
 import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import React from 'react';
@@ -51,12 +52,18 @@ export default function RootLayout({
           <meta property="og:locale" content="ar_SA" />
           <link rel="icon" type="image/png" sizes="32x32" href={logoAt(32)} />
           <link rel="icon" type="image/png" sizes="192x192" href={logoAt(192)} />
-          <link rel="apple-touch-icon" href={logoAt(180)} />
+          <link rel="apple-touch-icon" href="/app-icon?size=180" />
           <meta property="og:image" content={logoAt(512)} />
           <meta name="twitter:image" content={logoAt(512)} />
-          <meta name="manifest" content="/manifest.json" />
-          <meta name="theme-color" content="#09090b" />
-          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#ffffff" />
+          {/* Installed on iPhone: full screen, own name, status bar over the page. */}
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-title" content="أحمد الحربي" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          <meta name="format-detection" content="telephone=no" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         </head>
         <body className={`${ibmPlexSansArabic.variable} font-body antialiased`}>
             <script
@@ -66,9 +73,17 @@ export default function RootLayout({
                   (function() {
                     try {
                       const theme = localStorage.getItem('theme') || 'light';
+                      var root = document.documentElement;
                       if (theme === 'dark') {
-                        document.documentElement.classList.add('dark');
+                        root.classList.add('dark');
                       }
+                      // Status bar colour of the installed app follows the light/dark switch.
+                      var syncBar = function () {
+                        var meta = document.querySelector('meta[name="theme-color"]');
+                        if (meta) meta.setAttribute('content', getComputedStyle(document.body).backgroundColor || '#ffffff');
+                      };
+                      new MutationObserver(syncBar).observe(root, { attributes: true, attributeFilter: ['class'] });
+                      document.addEventListener('DOMContentLoaded', syncBar);
                     } catch (e) {}
                   })();
                 `,
@@ -77,6 +92,7 @@ export default function RootLayout({
             {/* الموقع عربي: كل مكونات Radix (القوائم، الاختيارات، التمرير...) تشتغل من اليمين لليسار */}
             <DirectionProvider dir="rtl">
               <Body>{children}</Body>
+              <RegisterServiceWorker />
               {isClient && <Toaster />}
             </DirectionProvider>
         </body>

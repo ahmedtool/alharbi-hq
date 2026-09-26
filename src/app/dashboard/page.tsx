@@ -41,56 +41,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth, signOut } from "@/lib/auth";
-
-const navLinks = [
-  {
-    category: "الرئيسية",
-    links: [
-      { name: "المهام", href: "/tasks", icon: CheckCircle2 },
-      { name: "المشاريع", href: "/projects", icon: Briefcase },
-      { name: "العملاء", href: "/clients", icon: Users },
-      { name: "ملفاتي", href: "/files", icon: FileText },
-      { name: "الدعم الفني", href: "/support", icon: LifeBuoy },
-      { name: "مركز الأفكار", href: "/ideas", icon: Lightbulb },
-      { name: "المساعد الذكي", href: "/ai-assistant", icon: MessageCircle },
-      { name: "صفحة الروابط (Bio)", href: "/bio", icon: Link2 },
-    ]
-  },
-  {
-    category: "مالية المشاريع",
-    links: [
-      { name: "نظرة عامة مالية", href: "/finance", icon: DollarSign },
-      { name: "الفواتير", href: "/finance/invoices", icon: FileDigit },
-      { name: "الاشتراكات", href: "/finance/subscriptions", icon: Repeat },
-      { name: "المنتجات والخدمات", href: "/finance/products", icon: Package },
-    ]
-  },
-  {
-    category: "الأدوات والتطبيقات",
-    links: [
-        { name: "إدارة الروابط العامة", href: "/tools-directory", icon: Library },
-        { name: "إدارة الوصول بالرقم", href: "/numbered-links", icon: Hash },
-        { name: "اداة تسعير المنتجات", href: "/tools/pricing-calculator", icon: Calculator },
-        { name: "اداة الفاتورة", href: "/tools/invoice-generator", icon: FileDigit },
-        { name: "اداة بناء العقود", href: "/tools/contract-builder", icon: FileJson },
-        { name: "تنبؤ المبيعات", href: "/tools/sales-forecasting", icon: TrendingUp },
-        { name: "متتبع العادات", href: "/tools/habit-tracker", icon: Star },
-    ]
-  },
-  {
-      category: "المطور",
-      links: [
-        { name: "واجهات API والرموز", href: "/developer/api-tokens", icon: Code },
-        { name: "الأكواد والأدوات", href: "/developer/snippets", icon: Code },
-      ]
-  },
-  {
-      category: "النظام",
-      links: [
-        { name: "الإعدادات", href: "/settings", icon: Settings },
-      ]
-  }
-];
+import { navLinks } from "@/lib/nav";
 
 interface Transaction {
     id: string;
@@ -237,8 +188,8 @@ export default function DashboardPage() {
       </PageHeader>
       <main className="space-y-8">
         <section>
-            <h2 className="text-2xl font-bold mb-4">نظرة عامة سريعة</h2>
-             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">نظرة عامة سريعة</h2>
+             <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
@@ -323,16 +274,16 @@ export default function DashboardPage() {
         {navLinks.map((section) => {
             return(
           <div key={section.category}>
-            <h2 className="text-2xl font-bold mb-4">{section.category}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">{section.category}</h2>
+            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
               {section.links.map((link) => {
                 const Icon = link.icon;
                 return (
                 <Link href={link.href} key={link.name} className="block h-full">
                   <Card className="hover:bg-accent/50 hover:border-primary/20 transition-colors h-full">
-                    <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-3 h-full">
-                      <Icon className="h-8 w-8 text-primary" />
-                      <p className="text-base font-semibold">{link.name}</p>
+                    <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center gap-2 md:gap-3 h-full">
+                      <Icon className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                      <p className="text-xs md:text-base font-semibold leading-snug">{link.name}</p>
                     </CardContent>
                   </Card>
                 </Link>

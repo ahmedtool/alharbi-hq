@@ -1,18 +1,24 @@
 {
-  "name": "أحمد الحربي - مركز القيادة",
-  "short_name": "مركز القيادة",
-  "description": "مركز القيادة الشخصي لإدارة المشاريع والمهام والمالية.",
-  "start_url": "/",
+  "id": "/dashboard",
+  "name": "أحمد الحربي",
+  "short_name": "أحمد الحربي",
+  "description": "لوحة التحكم: المهام والمشاريع والعملاء والمالية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#111111",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
-    {
-      "src": "https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "/app-icon?size=192", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon?size=512", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon?size=512&maskable=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "المهام", "url": "/tasks" },
+    { "name": "الفواتير", "url": "/finance/invoices" },
+    { "name": "العملاء", "url": "/clients" }
   ]
 }

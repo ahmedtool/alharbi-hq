@@ -133,3 +133,12 @@
   .rule-draw::after { animation: none; }
 }
 @keyframes fade-only { from { opacity: 0; } }
+
+/* Phone / installed-app polish */
+html { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"] { touch-action: manipulation; }
+@media (display-mode: standalone) {
+  /* Feels like an app: no text-selection callouts on navigation, no side bounce. */
+  .tab-bar, .tab-bar * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  body { overscroll-behavior-x: none; }
+}
