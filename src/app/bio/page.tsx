@@ -61,7 +61,6 @@ interface NumberedLink {
 export default function BioPage() {
     const { toast } = useToast();
     const [searchNumber, setSearchSearchNumber] = useState('');
-    const [userName, setUserName] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [searchResult, setSearchResult] = useState<NumberedLink | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
@@ -132,10 +131,6 @@ export default function BioPage() {
                                 <span>#</span>
                                 <input inputMode="numeric" placeholder="الرقم، مثلًا ٢٣٩" value={searchNumber}
                                     onChange={(e) => setSearchSearchNumber(e.target.value)} disabled={isSearching} aria-label="الرقم" />
-                            </label>
-                            <label className="bio-field">
-                                <input placeholder="اسمك (اختياري)" value={userName}
-                                    onChange={(e) => setUserName(e.target.value)} disabled={isSearching} aria-label="اسمك" />
                             </label>
                             <button type="submit" className="btn btn-primary" disabled={isSearching || !searchNumber.trim()}>
                                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : null} بحث

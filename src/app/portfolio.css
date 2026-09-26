@@ -272,7 +272,7 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf section.bio-block { padding: 0; margin-bottom: 64px; }
 .pf .bio-rule { border-bottom: 2px solid var(--ink); }
 .pf .bio-rule::after { display: none; }
-.pf .bio-form { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; gap: 12px; align-items: end; }
+.pf .bio-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: end; }
 .pf .bio-field { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--ink); padding: 8px 0; }
 .pf .bio-field span { color: var(--muted); font-weight: 700; }
 .pf .bio-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 1.05rem; color: var(--ink); }
