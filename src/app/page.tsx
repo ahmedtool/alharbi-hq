@@ -25,6 +25,32 @@ function MaskedWords({ text, baseDelay = 1 }: { text: string; baseDelay?: number
   );
 }
 
+/** Counts up to `to` the first time it scrolls into view. */
+function CountUp({ to }: { to: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) { setN(to); return; }
+    let raf = 0;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      const start = performance.now();
+      const tick = (t: number) => {
+        const p = Math.min((t - start) / 1800, 1);
+        setN(Math.round(to * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); };
+  }, [to]);
+  return <span ref={ref}>{arNum(n)}</span>;
+}
+
 /** Adds the staggered-appearance classes to a list item. */
 const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as React.CSSProperties });
 
@@ -90,6 +116,7 @@ export default function HomePage() {
   const words = [...P.interests, ...P.skills.map((g) => g.group)];
   const nav = [
     { href: "#work", label: "وش أبني" },
+    { href: "#impact", label: "أرقامي" },
     { href: "#about", label: "نبذة" },
     { href: "#experience", label: "خبراتي" },
     { href: "#skills", label: "مهاراتي" },
@@ -189,10 +216,41 @@ export default function HomePage() {
             </div>
           </section>
 
+          {/* الأرقام والعملاء */}
+          <section id="impact" className="soft reveal">
+            <div className="container">
+              <div className="sec-head">
+                <div><div className="eyebrow">٠٢ · Impact</div><h2>أرقامي</h2></div>
+                <p>الأرقام شهادة على الإنجاز.</p>
+              </div>
+              <div className="impact">
+                {P.impact.map((m, i) => (
+                  <div key={m.title} className="impact-item st" style={{ ["--i" as string]: i }}>
+                    <div className="impact-num"><b>+<CountUp to={m.value} /></b><span>{m.unit}</span></div>
+                    <h3>{m.title}</h3>
+                    <p>{m.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="clients">
+                <div>
+                  <h3>انضم لقائمة عملائي</h3>
+                  <p>ما أبني مشاريع وبس، أبني شراكات نجاح.</p>
+                </div>
+                <ul className="clients-logos">
+                  {P.clients.map((c, i) => (
+                    <li key={c.logo} {...st(i + 2)}><img src={c.logo} alt={`شعار ${c.name}`} width={72} height={72} loading="lazy" /></li>
+                  ))}
+                </ul>
+                <Link className="btn btn-primary" href="/support/submit">كن عميلي التالي</Link>
+              </div>
+            </div>
+          </section>
+
           {/* النبذة والإنجازات */}
-          <section id="about" className="soft reveal">
+          <section id="about" className="reveal">
             <div className="container split">
-              <div className="split-head"><div className="eyebrow">٠٢</div><h2>نبذة عني</h2></div>
+              <div className="split-head"><div className="eyebrow">٠٣</div><h2>نبذة عني</h2></div>
               <div>
                 <div className="pf-about">{P.about.map((t) => <p key={t}>{t}</p>)}</div>
                 <div className="stats">
@@ -203,9 +261,9 @@ export default function HomePage() {
           </section>
 
           {/* الخبرات */}
-          <section id="experience" className="reveal">
+          <section id="experience" className="soft reveal">
             <div className="container split">
-              <div className="split-head"><div className="eyebrow">٠٣</div><h2>الخبرات والتعليم</h2></div>
+              <div className="split-head"><div className="eyebrow">٠٤</div><h2>الخبرات والتعليم</h2></div>
               <ol className="timeline">
                 {P.experience.map((e, i) => (
                   <li key={e.title} {...st(i)}>
@@ -221,9 +279,9 @@ export default function HomePage() {
           </section>
 
           {/* المهارات */}
-          <section id="skills" className="soft reveal">
+          <section id="skills" className="reveal">
             <div className="container">
-              <div className="sec-head"><div><div className="eyebrow">٠٤</div><h2>مهاراتي</h2></div></div>
+              <div className="sec-head"><div><div className="eyebrow">٠٥</div><h2>مهاراتي</h2></div></div>
               <div className="skills">
                 {P.skills.map((g, i) => (
                   <div key={g.group} className="skill-group st" style={{ ["--i" as string]: i }}>
@@ -247,9 +305,9 @@ export default function HomePage() {
           </section>
 
           {/* التواصل */}
-          <section id="contact" className="reveal">
+          <section id="contact" className="soft reveal">
             <div className="container contact">
-              <div className="eyebrow">٠٥ · تواصل معي</div>
+              <div className="eyebrow">٠٦ · تواصل معي</div>
               <h2>عندك فكرة أو فرصة؟<br />خلنا نتكلم.</h2>
               <a className="contact-email" href={`mailto:${P.contact.email}`}>{P.contact.email}</a>
               <div className="contact-links">

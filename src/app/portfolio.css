@@ -306,3 +306,25 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .req-steps li { padding-top: 12px; border-top: 2px solid var(--line); color: var(--muted); font-weight: 700; font-size: .95rem; transition: border-color .4s var(--ease), color .4s; }
 .pf .req-steps li b { margin-inline-end: 6px; }
 .pf .req-steps li.active, .pf .req-steps li.done { border-color: var(--ink); color: var(--ink); }
+/* Numbers and clients */
+.pf .impact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.pf .impact-item { padding: 36px 0; display: grid; gap: 10px; align-content: start; }
+.pf .impact-item + .impact-item { padding-inline-start: 40px; border-inline-start: 1px solid var(--line); }
+.pf .impact-item:first-child { padding-inline-end: 40px; }
+.pf .impact-num { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.pf .impact-num b { font-size: clamp(3rem, 8vw, 5.5rem); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.pf .impact-num > span { color: var(--muted); font-weight: 700; }
+.pf .impact-item h3 { font-size: 1.3rem; margin-top: 8px; }
+.pf .impact-item p { color: var(--ink-soft); max-width: 460px; }
+.pf .clients { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
+.pf .clients h3 { font-size: 1.3rem; }
+.pf .clients p { color: var(--muted); }
+.pf .clients-logos { list-style: none; display: flex; gap: 14px; }
+.pf .clients-logos img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); border: 1px solid var(--line); filter: grayscale(1); transition: filter .4s, transform .4s var(--ease); }
+.pf .clients-logos img:hover { filter: none; transform: translateY(-4px); }
+@media (max-width: 800px) {
+  .pf .impact { grid-template-columns: minmax(0, 1fr); }
+  .pf .impact-item:first-child { padding-inline-end: 0; }
+  .pf .impact-item + .impact-item { padding-inline-start: 0; border-inline-start: 0; border-top: 1px solid var(--line); }
+  .pf .clients { grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 20px; }
+}

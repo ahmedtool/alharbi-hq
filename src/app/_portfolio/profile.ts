@@ -45,6 +45,28 @@ export const PROFILE = {
     { value: "SaaS", label: "منصة «مرشح» للمطاعم والمقاهي" },
   ],
 
+  // Numbers and clients carried over from the old home page.
+  impact: [
+    {
+      value: 30000,
+      unit: "ريال سعودي",
+      title: "مبيعات قياسية ونتائج ملموسة",
+      desc: "عوائد حققتها من المشاريع والمتاجر اللي طورتها لعملائي. كل ريال هنا قصة نجاح وهدف تحقق.",
+    },
+    {
+      value: 600,
+      unit: "عميل سعيد",
+      title: "شبكة عملاء واسعة ومتنوعة",
+      desc: "أكثر من ٦٠٠ عميل وثقوا فيني: مشاريع فريدة، متاجر إلكترونية ناجحة، ومبادرات شخصية.",
+    },
+  ],
+
+  clients: [
+    { name: "عميل", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551493/JNHhOktm_400x400_vtd7y1.jpg" },
+    { name: "بونيتا", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551813/%D8%A8%D9%88%D9%86%D9%8A%D8%AA%D8%A7_vtqnfm.png" },
+    { name: "باندا", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758552110/%D8%A8%D8%A7%D9%86%D8%AF%D8%A7_w3rd0e.png" },
+  ],
+
   experience: [
     {
       period: "حاليًا",
