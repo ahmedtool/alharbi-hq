@@ -4,11 +4,13 @@
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, RefreshCcw, Download, Upload, ShieldCheck, KeyRound } from "lucide-react";
+import { Loader2, RefreshCcw, Download, Upload, ShieldCheck, KeyRound, CloudUpload } from "lucide-react";
 import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { exportData, importData } from "./data-actions";
 import { updatePassword } from "./actions";
+import { migrateFirebaseFiles } from "./migrate-files-action";
+import { getAccessToken } from "@/lib/auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +36,35 @@ export default function SettingsPage() {
     const [newPin, setNewPin] = useState("");
     const [isUpdatingPin, setIsUpdatingPin] = useState(false);
 
+
+    const [isMigratingFiles, setIsMigratingFiles] = useState(false);
+    const [migrateStatus, setMigrateStatus] = useState("");
+
+    const handleMigrateFiles = async () => {
+        setIsMigratingFiles(true);
+        const skip: string[] = [];
+        let movedTotal = 0;
+        try {
+            const token = (await getAccessToken()) ?? "";
+            for (;;) {
+                const r = await migrateFirebaseFiles(token, skip);
+                if (!r.ok) throw new Error(r.message);
+                movedTotal += r.moved;
+                r.failed.forEach((f) => skip.push(f.key));
+                setMigrateStatus(`تم نقل ${movedTotal} ملف، باقي ${r.remaining}${skip.length ? `، وتعذّر ${skip.length}` : ""}.`);
+                if (r.remaining <= 0 || (r.moved === 0 && r.failed.length === 0)) break;
+            }
+            toast({
+                title: skip.length ? "انتهى النقل مع بعض الأخطاء" : "تم نقل كل الملفات",
+                description: skip.length ? `تعذّر نقل ${skip.length} ملف، غالبًا لأنها محذوفة من Firebase.` : `تم نقل ${movedTotal} ملف إلى Supabase.`,
+                variant: skip.length ? "destructive" : undefined,
+            });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "فشل نقل الملفات", description: error?.message ?? "" });
+        } finally {
+            setIsMigratingFiles(false);
+        }
+    };
 
     const handleClearCache = async () => {
         if (!window.confirm("هل أنت متأكد أنك تريد مسح الكاش؟ سيتم تسجيل خروجك وإعادة تحميل التطبيق بالكامل.")) return;
@@ -223,6 +254,24 @@ export default function SettingsPage() {
                          <Input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport}/>
 
                     </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><CloudUpload/> نقل الملفات من Firebase</CardTitle>
+                        <CardDescription>
+                            ينقل الملفات اللي للحين على Firebase Storage إلى Supabase ويحدّث روابطها. تسويه مرة وحدة، وتقدر تعيده بأمان.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {migrateStatus && <p className="text-sm text-muted-foreground">{migrateStatus}</p>}
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleMigrateFiles} disabled={isMigratingFiles}>
+                            {isMigratingFiles ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <CloudUpload className="ml-2 h-4 w-4"/>}
+                            {isMigratingFiles ? "جاري النقل..." : "انقل الملفات"}
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 <Card>
