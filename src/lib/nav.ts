@@ -1,7 +1,7 @@
 import {
   CheckCircle2, Briefcase, Code, DollarSign, Lightbulb, Settings, FileText, Users, FileDigit,
   FileJson, Repeat, Package, Calculator, Star, TrendingUp, LifeBuoy, MessageCircle, Library,
-  Link2, Hash, LayoutGrid,
+  Link2, Hash, LayoutGrid, Send,
 } from "lucide-react";
 
 /** Every dashboard section, grouped as on the dashboard page and in the mobile "more" sheet. */
@@ -17,6 +17,7 @@ export const navLinks = [
       { name: "مركز الأفكار", href: "/ideas", icon: Lightbulb },
       { name: "المساعد الذكي", href: "/ai-assistant", icon: MessageCircle },
       { name: "صفحة الروابط", href: "/bio-preview", icon: Link2 },
+      { name: "صفحة طلب المشروع", href: "/request-preview", icon: Send },
     ]
   },
   {
