@@ -237,12 +237,12 @@ export default function HomePage() {
                   <h3>انضم لقائمة عملائي</h3>
                   <p>ما أبني مشاريع وبس، أبني شراكات نجاح.</p>
                 </div>
+                <Link className="btn btn-primary" href="/support/submit">كن عميلي التالي</Link>
                 <ul className="clients-logos">
                   {P.clients.map((c, i) => (
                     <li key={c.logo} {...st(i + 2)}><img src={c.logo} alt={`شعار ${c.name}`} width={72} height={72} loading="lazy" /></li>
                   ))}
                 </ul>
-                <Link className="btn btn-primary" href="/support/submit">كن عميلي التالي</Link>
               </div>
             </div>
           </section>

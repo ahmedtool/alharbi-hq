@@ -65,6 +65,9 @@ export const PROFILE = {
     { name: "عميل", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551493/JNHhOktm_400x400_vtd7y1.jpg" },
     { name: "بونيتا", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758551813/%D8%A8%D9%88%D9%86%D9%8A%D8%AA%D8%A7_vtqnfm.png" },
     { name: "باندا", logo: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1758552110/%D8%A8%D8%A7%D9%86%D8%AF%D8%A7_w3rd0e.png" },
+    { name: "بازيليكو", logo: "/clients/basilico.png" },
+    { name: "نفرات", logo: "/clients/nafarat.png" },
+    { name: "البرجر الجميل", logo: "/clients/beautiful-burgers.png" },
   ],
 
   experience: [
