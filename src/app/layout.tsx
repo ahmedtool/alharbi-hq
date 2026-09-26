@@ -6,6 +6,7 @@ import { IBM_Plex_Sans_Arabic } from 'next/font/google';
 import React from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import Body from './body';
+import { DirectionProvider } from '@radix-ui/react-direction';
 import useClient from '@/hooks/use-client';
 
 
@@ -63,8 +64,11 @@ export default function RootLayout({
                 `,
               }}
             />
-            <Body>{children}</Body>
-            {isClient && <Toaster />}
+            {/* الموقع عربي: كل مكونات Radix (القوائم، الاختيارات، التمرير...) تشتغل من اليمين لليسار */}
+            <DirectionProvider dir="rtl">
+              <Body>{children}</Body>
+              {isClient && <Toaster />}
+            </DirectionProvider>
         </body>
     </html>
   );

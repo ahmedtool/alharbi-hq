@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from 'next/link';
 import Image from "next/image";
 import { posts as staticPosts } from './posts';
@@ -20,7 +20,7 @@ export default function BlogListPage() {
             </div>
              <Button asChild variant="outline">
                 <Link href="/">
-                    <ArrowLeft className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                     العودة للرئيسية
                 </Link>
             </Button>

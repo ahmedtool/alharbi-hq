@@ -90,6 +90,12 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 { letter-spacing: -0.01em; }
+  /* الإيميلات والروابط والأرقام تنكتب من اليسار، بس تبقى محاذاة لليمين مثل باقي الحقول */
+  input[type="email"], input[type="url"], input[type="tel"], input[type="number"],
+  input[type="date"], input[type="datetime-local"], input[type="time"] {
+    direction: ltr;
+    text-align: right;
+  }
   ::selection { background: hsl(var(--foreground)); color: hsl(var(--background)); }
   .saudi-riyal {
     font-family: 'SaudiRiyalSymbol', sans-serif;

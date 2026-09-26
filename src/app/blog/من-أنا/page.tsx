@@ -3,7 +3,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { ShareButtons } from './share-buttons';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ export default function WhoAmIPage() {
         </div>
         <Button asChild variant="outline">
           <Link href="/blog">
-              <ArrowLeft className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 h-4 w-4" />
               العودة للمدونة
           </Link>
         </Button>

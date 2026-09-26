@@ -403,10 +403,19 @@ export function InvoiceForm() {
                         </div>
                         <div>
                             <Label className="font-bold">معلومات الفاتورة</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-1">
-                                <Input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="رقم الفاتورة" />
-                                <Input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
+                                <div className="space-y-1 sm:col-span-2">
+                                    <Label htmlFor="inv-number" className="text-xs text-muted-foreground">رقم الفاتورة</Label>
+                                    <Input id="inv-number" dir="ltr" className="text-right" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="INV-001" />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="inv-date" className="text-xs text-muted-foreground">تاريخ الإصدار</Label>
+                                    <Input id="inv-date" type="date" dir="ltr" className="text-right" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="inv-due" className="text-xs text-muted-foreground">تاريخ الاستحقاق</Label>
+                                    <Input id="inv-due" type="date" dir="ltr" className="text-right" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                                </div>
                             </div>
                         </div>
                          <div>
@@ -427,6 +436,14 @@ export function InvoiceForm() {
             <Card className="print:hidden">
                 <CardContent className="p-6">
                    <Label className="font-bold mb-4 block">بنود الفاتورة</Label>
+                     {/* عناوين الأعمدة (تختفي في الجوال لأن كل حقل له عنوانه) */}
+                     <div className="hidden md:grid md:grid-cols-12 gap-2 pb-2 mb-2 border-b text-xs font-semibold text-muted-foreground">
+                        <span className="md:col-span-6">الوصف</span>
+                        <span className="md:col-span-2 text-center">الكمية</span>
+                        <span className="md:col-span-2 text-center">سعر الوحدة</span>
+                        <span className="md:col-span-1 text-center">الإجمالي</span>
+                        <span className="md:col-span-1" />
+                     </div>
                      <div className="space-y-4">
                         {lineItems.map((item, index) => (
                             <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start">
@@ -444,10 +461,10 @@ export function InvoiceForm() {
                                      <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', Number(e.target.value))} className="text-center" placeholder="الكمية" />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
-                                     <Label className="text-xs md:hidden mb-1 block">السعر</Label>
+                                     <Label className="text-xs md:hidden mb-1 block">سعر الوحدة</Label>
                                      <Input type="number" value={item.price} onChange={e => handleItemChange(item.id, 'price', Number(e.target.value))} className="text-center" placeholder="السعر" />
                                 </div>
-                                <p className="col-span-3 md:col-span-1 text-center font-medium self-center pt-7 md:pt-0">{new Intl.NumberFormat('ar-SA').format(item.quantity * item.price)}</p>
+                                <p className="col-span-3 md:col-span-1 text-center font-semibold self-center pt-7 md:pt-0 whitespace-nowrap">{new Intl.NumberFormat('ar-SA').format(item.quantity * item.price)} <span className="saudi-riyal">&#xea;</span></p>
                                 <Button variant="ghost" size="icon" className="col-span-1 self-center text-muted-foreground hover:text-destructive" onClick={() => handleRemoveItem(item.id)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>

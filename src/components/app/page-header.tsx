@@ -3,7 +3,7 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home } from "lucide-react";
+import { Home, ArrowRight } from "lucide-react";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
@@ -31,7 +31,7 @@ export function PageHeader({ title, description, children, className }: PageHead
         <div className="flex justify-end items-center gap-2">
            {children}
             <Button variant="outline" size="icon" onClick={() => router.back()} title="العودة للخلف">
-                <ArrowLeft />
+                <ArrowRight />
             </Button>
              <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')} title="العودة للوحة التحكم">
                 <Home />

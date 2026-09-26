@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { HardHat, ArrowLeft } from "lucide-react";
+import { HardHat, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from 'next/link';
 
@@ -20,7 +20,7 @@ export default function MaintenancePage() {
             </p>
              <Button asChild variant="outline">
                 <Link href="/">
-                   <ArrowLeft className="ml-2 h-4 w-4" /> العودة للرئيسية
+                   <ArrowRight className="ml-2 h-4 w-4" /> العودة للرئيسية
                 </Link>
             </Button>
         </div>

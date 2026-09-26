@@ -3,7 +3,7 @@ import React from 'react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function PublicToolsLayout({
   children,
@@ -19,7 +19,7 @@ export default function PublicToolsLayout({
             </div>
              <Button asChild variant="outline">
                 <Link href="/">
-                    <ArrowLeft className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                     العودة للرئيسية
                 </Link>
             </Button>

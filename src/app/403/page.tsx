@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Hand, ArrowLeft } from "lucide-react";
+import { Hand, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from 'next/link';
 
@@ -21,7 +21,7 @@ export default function ForbiddenPage() {
             <div className="flex gap-4 justify-center">
                 <Button asChild>
                     <Link href="/">
-                       <ArrowLeft className="ml-2 h-4 w-4" /> العودة للرئيسية
+                       <ArrowRight className="ml-2 h-4 w-4" /> العودة للرئيسية
                     </Link>
                 </Button>
             </div>

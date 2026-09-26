@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { collection, doc, getDoc, updateDoc, query, orderBy, Timestamp, getDocs, addDoc, setDoc, where, limit, deleteDoc, writeBatch } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Package, FileText, CheckCircle, Trash2 } from "lucide-react";
+import { Loader2, Package, FileText, CheckCircle, Trash2, ArrowRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -273,7 +273,7 @@ export default function TicketDetailsPage() {
                 <p>لم يتم العثور على التذكرة.</p>
                 <Button asChild variant="link">
                     <Link href="/support">
-                        <ArrowLeft className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                         العودة للدعم الفني
                     </Link>
                 </Button>
@@ -309,7 +309,7 @@ export default function TicketDetailsPage() {
                 </AlertDialog>
                  <Button asChild variant="outline">
                     <Link href="/support">
-                        <ArrowLeft className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                         العودة لكل الطلبات
                     </Link>
                 </Button>

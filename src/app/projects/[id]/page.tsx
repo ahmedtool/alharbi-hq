@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Briefcase, CheckCircle2, DollarSign, FileText, TrendingUp, TrendingDown, Clock, Pocket, Users } from 'lucide-react';
+import { Briefcase, CheckCircle2, DollarSign, FileText, TrendingUp, TrendingDown, Clock, Pocket, Users, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, intervalToDuration } from 'date-fns';
 import { ar } from "date-fns/locale";
@@ -174,7 +174,7 @@ export default function ProjectDetailPage() {
                 <p>لم يتم العثور على المشروع.</p>
                 <Button asChild variant="link">
                     <Link href="/projects">
-                        <ArrowLeft className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                         العودة للمشاريع
                     </Link>
                 </Button>
@@ -190,7 +190,7 @@ export default function ProjectDetailPage() {
             >
                  <Button asChild variant="outline">
                     <Link href="/projects">
-                        <ArrowLeft className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                         العودة للمشاريع
                     </Link>
                 </Button>
