@@ -42,8 +42,9 @@ const pageData = {
     bio: "أصنع أدوات تقنية بسيطة 👨‍💻\nوأشارك مواقع وتجارب في الذكاء الاصطناعي 🤖",
     logoUrl: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png",
     socials: [
-        { platform: 'x', url: 'https://x.com/ahmedalharbisa' },
-        { platform: 'tiktok', url: 'https://tiktok.com/@ahmedalharbisa' },
+        // No public X/TikTok accounts for now: the icons stay and lead to the main site.
+        { platform: 'x', url: '/' },
+        { platform: 'tiktok', url: '/' },
         { platform: 'whatsapp', url: 'https://wa.me/966560766880' },
         { platform: 'email', url: 'mailto:hi@ahmedalharbi.com' },
     ]
@@ -163,7 +164,7 @@ export default function BioPage() {
                             ))}
                             {pageData.socials.map((social) => (
                                 <li key={social.platform}>
-                                    <a href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`تواصل معي عبر ${socialLabel[social.platform] ?? social.platform}`}>
+                                    <a href={social.url} {...(social.url.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })} aria-label={social.url === "/" ? `${socialLabel[social.platform] ?? social.platform}: موقعي الشخصي` : `تواصل معي عبر ${socialLabel[social.platform] ?? social.platform}`}>
                                         <span className="bio-social">
                                             <em>
                                                 {social.platform === 'x' && <XIcon />}

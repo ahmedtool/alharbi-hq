@@ -120,8 +120,6 @@ export const PROFILE = {
   contact: {
     email: "hi@ahmedalharbi.com",
     links: [
-      { label: "X", url: "https://x.com/ahmedalharbisa" },
-      { label: "TikTok", url: "https://tiktok.com/@ahmedalharbisa" },
       { label: "GitHub", url: "https://github.com/ahmedtool" },
       { label: "صفحة روابطي", url: "/bio" },
     ],
