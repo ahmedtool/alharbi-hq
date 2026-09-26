@@ -162,7 +162,7 @@ export default function HomePage() {
             <div className="container">
               <div className="eyebrow name-en intro-anim" style={{ ["--d" as string]: 0 }}>{P.nameEn}</div>
               <h1 className="hero-title"><MaskedWords text={P.name} /></h1>
-              <div className="pf-role intro-anim" style={{ ["--d" as string]: 5 }}>{P.role}</div>
+              <div className="pf-role intro-anim" style={{ ["--d" as string]: 5 }}>{P.role} <span aria-hidden="true">·</span> <span lang="en" dir="ltr">{P.roleEn}</span></div>
               <div className="hero-sub intro-anim" style={{ ["--d" as string]: 7 }}>
                 <div>
                   <p>{P.intro}</p>
@@ -193,7 +193,7 @@ export default function HomePage() {
             <div className="container">
               <div className="sec-head">
                 <div><div className="eyebrow">٠١ · What I Build</div><h2>وش أبني</h2></div>
-                <p>منتجات بنيتها وأطلقتها.</p>
+                <p>كل مشروع مشكلة تشغيلية تحولت لحل رقمي.</p>
               </div>
               <div className="projects">
                 {P.projects.map((p, i) => (
@@ -205,7 +205,11 @@ export default function HomePage() {
                     <div className="project-body">
                       <span className="chip">{p.label}</span>
                       <h3>{p.title} <small lang="en">{p.titleEn}</small></h3>
-                      <p>{p.desc}</p>
+                      <dl className="case">
+                        <div><dt>المشكلة</dt><dd>{p.problem}</dd></div>
+                        <div><dt>الحل</dt><dd>{p.solution}</dd></div>
+                        <div><dt>النتيجة</dt><dd>{p.result}</dd></div>
+                      </dl>
                       <ul className="points">{p.points.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>
                       <div className="tags">{p.tags.map((t) => <span key={t} className="chip sky">{t}</span>)}</div>
                       {p.link && <a className="btn btn-ghost" href={p.link} target="_blank" rel="noopener">زيارة الموقع ↗</a>}

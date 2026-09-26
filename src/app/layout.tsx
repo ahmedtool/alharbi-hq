@@ -21,7 +21,7 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 // It should be moved to a higher-level server component if possible.
 // export const metadata: Metadata = {
 //   title: 'أحمد الحربي',
-//   description: 'أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح.',
+//   description: 'أحمد الحربي، العمليات والتحول الرقمي: أربط الإدارة بالتقنية والمنتجات الرقمية.',
 //   manifest: '/manifest.json',
 // };
 
@@ -42,10 +42,10 @@ export default function RootLayout({
   return (
     <html lang="ar" suppressHydrationWarning dir="rtl">
         <head>
-          <title>أحمد الحربي</title>
-          <meta name="description" content="أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح." />
-          <meta property="og:title" content="أحمد الحربي" />
-          <meta property="og:description" content="أحمد الحربي: إدارة أعمال، تشغيل صحي، ومنتجات رقمية. مؤسس منصة مرشح." />
+          <title>أحمد الحربي | العمليات والتحول الرقمي</title>
+          <meta name="description" content="أحمد الحربي، العمليات والتحول الرقمي: أربط الإدارة بالتقنية والمنتجات الرقمية." />
+          <meta property="og:title" content="أحمد الحربي | العمليات والتحول الرقمي" />
+          <meta property="og:description" content="أحمد الحربي، العمليات والتحول الرقمي: أربط الإدارة بالتقنية والمنتجات الرقمية." />
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="أحمد الحربي" />
           <meta property="og:locale" content="ar_SA" />
