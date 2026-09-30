@@ -73,7 +73,7 @@ html.dark .pf {
 .pf .bg-sun { background: var(--c4); } .pf .bg-lilac { background: var(--c5); } .pf .bg-rose { background: var(--c6); }
 
 .pf .site-footer { border-top: 1px solid var(--line); padding: 56px 0 32px; margin-top: 32px; color: var(--ink-soft); }
-.pf .foot-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
+.pf .foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; }
 .pf .foot-grid h5 { font-size: .9rem; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
 .pf .foot-grid ul { list-style: none; display: grid; gap: 8px; }
 .pf .foot-grid a:hover { color: var(--ink); text-decoration: underline; }

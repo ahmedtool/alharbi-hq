@@ -341,6 +341,15 @@ export default function HomePage() {
                   <li><Link href="/bio">صفحة روابطي</Link></li>
                 </ul>
               </div>
+              <div>
+                <h5>حساباتي</h5>
+                <ul>
+                  {P.contact.links.filter((l) => l.url.startsWith("http")).map((l) => (
+                    <li key={l.label}><a href={l.url} target="_blank" rel="noopener">{l.label} ↗</a></li>
+                  ))}
+                  <li><a href={`mailto:${P.contact.email}`}>الإيميل</a></li>
+                </ul>
+              </div>
             </div>
             <div className="copy">
               <span>© {new Date().getFullYear()} {P.name}</span>
