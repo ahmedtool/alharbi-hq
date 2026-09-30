@@ -63,6 +63,10 @@ const siteShot = (url: string) =>
  */
 function SitePreview({ url, logo, title }: { url: string; logo?: string; title: string }) {
   const [ready, setReady] = useState(false);
+  // The service answers with a small "generating" placeholder while it takes a
+  // fresh capture, so ask again a few times until the real screenshot arrives.
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => { if (attempt < 6) setTimeout(() => setAttempt((a) => a + 1), 4000 + attempt * 2000); };
   const host = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   return (
     <div className="site-frame" aria-hidden="true">
@@ -73,10 +77,15 @@ function SitePreview({ url, logo, title }: { url: string; logo?: string; title: 
       <div className="site-screen">
         <img
           className={`site-shot ${ready ? "ready" : ""}`}
-          src={siteShot(url)}
+          src={siteShot(url) + (attempt ? `&r=${attempt}` : "")}
           alt=""
           loading="lazy"
-          onLoad={(e) => setReady(e.currentTarget.naturalWidth >= 800)}
+          onLoad={(e) => {
+            const ok = e.currentTarget.naturalWidth > 600;
+            setReady(ok);
+            if (!ok) retry();
+          }}
+          onError={retry}
         />
         {!ready && (
           <div className="site-fallback">
