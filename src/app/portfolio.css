@@ -339,3 +339,6 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .project.lead .case { grid-column: 1; }
 .pf .pf-role { color: var(--ink); }
 .pf .pf-role span { color: var(--muted); font-weight: 500; }
+/* Project logo on its cover */
+.pf .project-cover .cover-logo { width: clamp(64px, 11vw, 120px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 22%; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.18); margin-bottom: 14px; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.pf .project:hover .cover-logo { transform: translateY(-4px) rotate(-3deg); }

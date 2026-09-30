@@ -199,6 +199,7 @@ export default function HomePage() {
                 {P.projects.map((p, i) => (
                   <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
                     <div className={`project-cover ${p.bg}`}>
+                      {p.logo && <img className="cover-logo" src={p.logo} alt={`شعار ${p.title}`} width={120} height={120} />}
                       <span className="cover-ar">{p.title}</span>
                       <span className="cover-en" lang="en">{p.titleEn}</span>
                     </div>
