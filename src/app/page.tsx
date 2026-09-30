@@ -346,10 +346,11 @@ export default function HomePage() {
                     <h3>انضم لقائمة عملائي</h3>
                     <p>ما أبني مشاريع وبس، أبني شراكات نجاح.</p>
                   </div>
-                  {/* Logos slide past on a loop (the list is doubled so it wraps seamlessly). */}
+                  {/* Logos slide past on a loop. The list is repeated 4 times and the row moves by
+                      half its length, so it wraps seamlessly and never shows an empty gap. */}
                   <div className="logo-marquee">
                     <ul className="logo-track">
-                      {[...P.clients, ...P.clients].map((c, i) => (
+                      {Array.from({ length: 4 }, () => P.clients).flat().map((c, i) => (
                         <li key={i} aria-hidden={i >= P.clients.length}>
                           <img src={c.logo} alt={i < P.clients.length ? `شعار ${c.name}` : ""} width={96} height={64} loading="lazy" />
                         </li>
