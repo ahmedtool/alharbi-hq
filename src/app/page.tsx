@@ -51,27 +51,38 @@ function CountUp({ to }: { to: number }) {
   return <span ref={ref}>{arNum(n)}</span>;
 }
 
+/** Screenshot of a site's current home page at phone size (390x844), from WordPress.com's mShots. */
+const siteShot = (url: string) =>
+  `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=780&h=1688&vpw=390&vph=844`;
+
 /**
- * A phone showing a live site, for project covers. The site renders at a real
- * phone width (390px) and is scaled to fit the screen, then slowly scrolls
- * like someone browsing it. It's a preview only: clicks go to the cover link.
+ * A phone showing a site's current look, for project covers. Sites often forbid
+ * being embedded (as JobBots does), so this shows an up-to-date screenshot
+ * rather than an iframe. Until the screenshot is ready (the service first
+ * returns a small placeholder) or if it fails, the project logo is shown.
  */
-function LivePhone({ src, title }: { src: string; title: string }) {
-  const screenRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.5);
-  useEffect(() => {
-    const el = screenRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setScale(e.contentRect.width / 390));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+function LivePhone({ url, logo, title }: { url: string; logo?: string; title: string }) {
+  const [ready, setReady] = useState(false);
   return (
     <div className="phone" aria-hidden="true">
-      <div className="phone-screen" ref={screenRef}>
-        <div className="phone-page" style={{ transform: `scale(${scale})` }}>
-          <iframe src={src} title={title} loading="lazy" tabIndex={-1} />
-        </div>
+      <div className="phone-screen">
+        <img
+          className={`phone-shot ${ready ? "ready" : ""}`}
+          src={siteShot(url)}
+          alt=""
+          loading="lazy"
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            // A real capture is portrait; the "generating" placeholder isn't.
+            setReady(img.naturalHeight > img.naturalWidth * 1.5);
+          }}
+        />
+        {!ready && (
+          <div className="phone-fallback">
+            {logo && <img src={logo} alt="" width={96} height={96} />}
+            <span lang="en">{title}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -226,8 +237,8 @@ export default function HomePage() {
                   <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
                     {p.preview ? (
                       <a className={`project-cover has-phone ${p.bg}`} href={p.link || p.preview} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
-                        <span className="live-pill"><i /> معاينة مباشرة</span>
-                        <LivePhone src={p.preview} title={`معاينة ${p.titleEn}`} />
+                        <span className="live-pill"><i /> الواجهة الحالية</span>
+                        <LivePhone url={p.preview} logo={p.logo} title={p.titleEn} />
                       </a>
                     ) : (
                       <div className={`project-cover ${p.bg}`}>

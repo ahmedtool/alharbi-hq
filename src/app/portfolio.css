@@ -348,13 +348,13 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .project.lead .phone { width: clamp(150px, 24%, 270px); }
 .pf .phone::before { content: ""; position: absolute; top: 14px; left: 50%; z-index: 2; width: 30%; height: 16px; transform: translateX(-50%); border-radius: 999px; background: #111; }
 .pf .phone-screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 27px; background: #fff; }
-.pf .phone-page { position: absolute; top: 0; left: 0; width: 390px; height: 2400px; transform-origin: 0 0; }
-.pf .phone-page iframe { display: block; width: 390px; height: 2400px; border: 0; pointer-events: none; background: #fff; animation: phone-browse 28s ease-in-out 2s infinite alternate; }
-@keyframes phone-browse { 0%, 12% { transform: translateY(0); } 88%, 100% { transform: translateY(-1556px); } }
+.pf .phone-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity .6s ease; }
+.pf .phone-shot.ready { opacity: 1; }
+.pf .phone-fallback { position: absolute; inset: 0; display: grid; align-content: start; justify-content: center; padding-top: 42%; justify-items: center; gap: 12px; background: #0b0b0b; color: #fff; font-weight: 700; font-size: .95rem; }
+.pf .phone-fallback img { width: 42%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 22%; }
 .pf .project:hover .phone { transform: translateY(-10px); }
-.pf .project:hover .phone-page iframe { animation-play-state: paused; }
 .pf .live-pill { position: absolute; top: 14px; inset-inline-start: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(0,0,0,.35); backdrop-filter: blur(6px); color: #fff; font-size: .78rem; font-weight: 700; }
 .pf .live-pill i { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 0 rgba(74,222,128,.7); animation: live-dot 1.8s infinite; }
 @keyframes live-dot { 70% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); } }
-@media (prefers-reduced-motion: reduce) { .pf .phone-page iframe, .pf .live-pill i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .pf .live-pill i { animation: none; } }
 @media (max-width: 700px) { .pf .phone, .pf .project.lead .phone { width: 46%; } }
