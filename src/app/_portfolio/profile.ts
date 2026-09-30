@@ -38,6 +38,8 @@ export const PROFILE = {
       points: ["أتمتة", "إطلاق وبيع", "مبيعات فعلية"],
       tags: ["Automation"],
       link: "https://www.jobbots.org/",
+      // Live site shown inside a phone on the project cover.
+      preview: "https://www.jobbots.org/",
       bg: "bg-sky",
     },
     {

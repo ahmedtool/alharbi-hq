@@ -51,6 +51,32 @@ function CountUp({ to }: { to: number }) {
   return <span ref={ref}>{arNum(n)}</span>;
 }
 
+/**
+ * A phone showing a live site, for project covers. The site renders at a real
+ * phone width (390px) and is scaled to fit the screen, then slowly scrolls
+ * like someone browsing it. It's a preview only: clicks go to the cover link.
+ */
+function LivePhone({ src, title }: { src: string; title: string }) {
+  const screenRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+  useEffect(() => {
+    const el = screenRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setScale(e.contentRect.width / 390));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div className="phone" aria-hidden="true">
+      <div className="phone-screen" ref={screenRef}>
+        <div className="phone-page" style={{ transform: `scale(${scale})` }}>
+          <iframe src={src} title={title} loading="lazy" tabIndex={-1} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Adds the staggered-appearance classes to a list item. */
 const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as React.CSSProperties });
 
@@ -198,11 +224,18 @@ export default function HomePage() {
               <div className="projects">
                 {P.projects.map((p, i) => (
                   <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
-                    <div className={`project-cover ${p.bg}`}>
-                      {p.logo && <img className="cover-logo" src={p.logo} alt={`شعار ${p.title}`} width={120} height={120} />}
-                      <span className="cover-ar">{p.title}</span>
-                      <span className="cover-en" lang="en">{p.titleEn}</span>
-                    </div>
+                    {p.preview ? (
+                      <a className={`project-cover has-phone ${p.bg}`} href={p.link || p.preview} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
+                        <span className="live-pill"><i /> معاينة مباشرة</span>
+                        <LivePhone src={p.preview} title={`معاينة ${p.titleEn}`} />
+                      </a>
+                    ) : (
+                      <div className={`project-cover ${p.bg}`}>
+                        {p.logo && <img className="cover-logo" src={p.logo} alt={`شعار ${p.title}`} width={120} height={120} />}
+                        <span className="cover-ar">{p.title}</span>
+                        <span className="cover-en" lang="en">{p.titleEn}</span>
+                      </div>
+                    )}
                     <div className="project-body">
                       <span className="chip">{p.label}</span>
                       <h3>{p.title} <small lang="en">{p.titleEn}</small></h3>
