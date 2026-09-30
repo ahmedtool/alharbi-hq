@@ -428,5 +428,6 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .logo-track img { display: block; width: 96px; height: 64px; object-fit: contain; padding: 8px; border-radius: 8px; background: #fff; border: 1px solid var(--line); filter: grayscale(1); transition: filter .3s; }
 .pf .logo-track img:hover { filter: none; }
 @keyframes logo-slide { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 6px)); } }
-@media (prefers-reduced-motion: reduce) { .pf .logo-track { animation: none; flex-wrap: wrap; width: auto; } }
+/* Always one moving row; just slower when the device asks for less motion. */
+@media (prefers-reduced-motion: reduce) { .pf .logo-track { animation-duration: 50s; } }
 @media (max-width: 800px) { .pf .impact-grid { grid-template-columns: minmax(0, 1fr); } .pf .slider-sm, .pf .clients-card { padding: 20px; } .pf .logo-marquee { margin-inline: -20px; } }
