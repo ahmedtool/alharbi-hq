@@ -81,6 +81,74 @@ function SiteDemo({ url, logo, name, tagline, chips }: { url: string; logo: stri
   );
 }
 
+/**
+ * Horizontal slider for the projects: one project per slide (swipe on phones,
+ * arrows/dots elsewhere). Advances on its own every 9s (one demo loop) while
+ * in view, until the visitor touches it.
+ */
+function WorkSlider({ count, children }: { count: number; children: React.ReactNode }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [hover, setHover] = useState(false);
+
+  const slides = () => Array.from(trackRef.current?.children ?? []) as HTMLElement[];
+  const go = (i: number) => {
+    const track = trackRef.current;
+    const target = slides()[(i + count) % count];
+    if (!track || !target) return;
+    // Scroll by the on-screen offset so it works the same in RTL and LTR.
+    track.scrollBy({ left: target.getBoundingClientRect().left - track.getBoundingClientRect().left, behavior: "smooth" });
+  };
+  const userGo = (i: number) => { setAuto(false); go(i); };
+
+  // Which slide is showing.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) setActive(slides().indexOf(e.target as HTMLElement));
+    }), { root: track, threshold: 0.6 });
+    slides().forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  // Autoplay only while the slider is on screen.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.5 });
+    io.observe(track);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!auto || !visible || hover || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => go(active + 1), 9000);
+    return () => clearTimeout(t);
+  }, [auto, visible, hover, active]);
+
+  return (
+    <div className="slider" aria-roledescription="عرض شرائح" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <div className="slider-track" ref={trackRef} onPointerDown={() => setAuto(false)} onWheel={(e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) setAuto(false); }}>
+        {children}
+      </div>
+      <div className="slider-nav">
+        <button type="button" className="icon-btn" onClick={() => userGo(active - 1)} aria-label="السابق">→</button>
+        <div className="slider-dots">
+          {Array.from({ length: count }, (_, i) => (
+            <button key={i} type="button" className={i === active ? "on" : ""} onClick={() => userGo(i)} aria-label={`الشريحة ${i + 1}`} aria-current={i === active}>
+              {i === active && auto && visible && !hover && <i key={active} />}
+            </button>
+          ))}
+        </div>
+        <span className="slider-count">{arNum(active + 1)} / {arNum(count)}</span>
+        <button type="button" className="icon-btn" onClick={() => userGo(active + 1)} aria-label="التالي">←</button>
+      </div>
+    </div>
+  );
+}
+
 /** Adds the staggered-appearance classes to a list item. */
 const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as React.CSSProperties });
 
@@ -225,9 +293,9 @@ export default function HomePage() {
                 <div><div className="eyebrow">٠١ · What I Build</div><h2>وش أبني</h2></div>
                 <p>كل مشروع مشكلة تشغيلية تحولت لحل رقمي.</p>
               </div>
-              <div className="projects">
+              <WorkSlider count={P.projects.length}>
                 {P.projects.map((p, i) => (
-                  <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
+                  <article key={p.titleEn} className="project slide" aria-roledescription="شريحة" aria-label={`${i + 1} من ${P.projects.length}: ${p.title}`}>
                     {p.link && p.logo ? (
                       <a className={`project-cover has-demo ${p.bg}`} href={p.link} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
                         <SiteDemo url={p.link} logo={p.logo} name={p.brand ?? p.title} tagline={p.tagline} chips={p.points} />
@@ -247,13 +315,12 @@ export default function HomePage() {
                         <div><dt>الحل</dt><dd>{p.solution}</dd></div>
                         <div><dt>النتيجة</dt><dd>{p.result}</dd></div>
                       </dl>
-                      <ul className="points">{p.points.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>
                       <div className="tags">{p.tags.map((t) => <span key={t} className="chip sky">{t}</span>)}</div>
                       {p.link && <a className="btn btn-ghost" href={p.link} target="_blank" rel="noopener">زيارة الموقع ↗</a>}
                     </div>
                   </article>
                 ))}
-              </div>
+              </WorkSlider>
             </div>
           </section>
 
