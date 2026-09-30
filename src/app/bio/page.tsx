@@ -42,9 +42,8 @@ const pageData = {
     bio: "أصنع أدوات تقنية بسيطة 👨‍💻\nوأشارك مواقع وتجارب في الذكاء الاصطناعي 🤖",
     logoUrl: "https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png",
     socials: [
-        // No public X/TikTok accounts for now: the icons stay and lead to the main site.
-        { platform: 'x', url: '/' },
-        { platform: 'tiktok', url: '/' },
+        { platform: 'x', url: 'https://x.com/ahmedsupsa' },
+        { platform: 'tiktok', url: 'https://www.tiktok.com/@ahmedsupsa' },
         { platform: 'whatsapp', url: 'https://wa.me/966560766880' },
         { platform: 'email', url: 'mailto:hi@ahmedalharbi.com' },
     ]
