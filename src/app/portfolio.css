@@ -342,20 +342,45 @@ html:has(.pf) { scroll-behavior: smooth; }
 /* Project logo on its cover */
 .pf .project-cover .cover-logo { width: clamp(64px, 11vw, 120px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 22%; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.18); margin-bottom: 14px; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
 .pf .project:hover .cover-logo { transform: translateY(-4px) rotate(-3deg); }
-/* Project cover with a site preview in a soft-edged window */
-.pf .project-cover.has-site { position: relative; cursor: pointer; padding: max(13%, 58px) 7% 0; justify-content: flex-start; }
-.pf .site-frame { width: 100%; flex: 1; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px 14px 0 0; background: #fff; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.18); transition: transform .8s var(--ease); }
-.pf .project:hover .site-frame { transform: translateY(-8px); }
-.pf .site-bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #f3f3f1; border-bottom: 1px solid #e7e7e5; direction: ltr; }
-.pf .site-bar .dots { display: flex; gap: 6px; }
-.pf .site-bar .dots i { width: 9px; height: 9px; border-radius: 50%; background: #d4d4d0; }
-.pf .site-url { flex: 1; max-width: 60%; margin-inline: auto; padding: 3px 10px; border-radius: 999px; background: #fff; color: #767676; font-size: .72rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf .site-screen { position: relative; flex: 1; overflow: hidden; background: #fff; }
-.pf .site-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; opacity: 0; transition: opacity .6s ease; }
-.pf .site-shot.ready { opacity: 1; }
-.pf .site-fallback { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 12px; background: #0b0b0b; color: #fff; font-weight: 700; font-size: .95rem; }
-.pf .site-fallback img { width: clamp(56px, 18%, 96px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 22%; }
-.pf .live-pill { position: absolute; top: 14px; inset-inline-start: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(0,0,0,.35); backdrop-filter: blur(6px); color: #fff; font-size: .78rem; font-weight: 700; }
-.pf .live-pill i { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 0 rgba(74,222,128,.7); animation: live-dot 1.8s infinite; }
-@keyframes live-dot { 70% { box-shadow: 0 0 0 7px rgba(74,222,128,0); } 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); } }
-@media (prefers-reduced-motion: reduce) { .pf .live-pill i { animation: none; } }
+
+/* Project cover: animated site "launch" (typed URL -> page builds -> cursor clicks) */
+.pf .project-cover.has-demo { --T: 9s; position: relative; cursor: pointer; padding: max(9%, 36px) 8% 0; justify-content: flex-start; }
+.pf .demo { width: 100%; max-width: 640px; flex: 1; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px 16px 0 0; background: #fff; color: #111; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.18); container-type: inline-size; transition: transform .8s var(--ease); }
+.pf .project:hover .demo { transform: translateY(-8px); }
+.pf .demo-bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #f3f3f1; border-bottom: 1px solid #e7e7e5; direction: ltr; }
+.pf .demo-bar .dots { display: flex; gap: 6px; }
+.pf .demo-bar .dots i { width: 9px; height: 9px; border-radius: 50%; background: #d4d4d0; }
+.pf .demo-bar .dots i:nth-child(1) { background: #ff5f57; } .pf .demo-bar .dots i:nth-child(2) { background: #febc2e; } .pf .demo-bar .dots i:nth-child(3) { background: #28c840; }
+.pf .demo-url { flex: 1; max-width: 62%; margin-inline: auto; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #fff; color: #555; font: 500 .74rem/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; overflow: hidden; }
+.pf .demo-url .lock { font-size: .65rem; opacity: .6; }
+.pf .demo-url .type { display: inline-block; overflow: hidden; max-width: 0; animation: demo-type var(--T) steps(var(--n)) infinite; }
+.pf .demo-url .caret { width: 1px; height: 1em; background: #111; animation: demo-caret .8s steps(1) infinite; }
+.pf .demo-page { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(6px, 1.8cqw, 12px); padding: 5cqw 6cqw; text-align: center; background: radial-gradient(120% 80% at 50% 0%, #fafaf8 0%, #fff 60%); }
+.pf .demo-logo { width: clamp(40px, 13cqw, 84px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 24%; box-shadow: 0 8px 24px rgba(0,0,0,.15); animation: demo-pop var(--T) cubic-bezier(.2,.8,.2,1.2) infinite; }
+.pf .demo-name { font-size: clamp(16px, 6cqw, 40px); line-height: 1.15; letter-spacing: -0.02em; animation: demo-rise-1 var(--T) var(--ease) infinite; }
+.pf .demo-tag { font-size: clamp(11px, 2.8cqw, 17px); color: #555; animation: demo-rise-2 var(--T) var(--ease) infinite; }
+.pf .demo-chips { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.pf .demo-chips li { padding: 3px 10px; border-radius: 999px; background: #f1f1ef; border: 1px solid #e7e7e5; font-size: clamp(10px, 2.2cqw, 13px); font-weight: 600; animation: demo-chip var(--T) var(--ease) infinite; animation-delay: calc(var(--i) * .18s); }
+.pf .demo-cta { position: relative; margin-top: 4px; padding: clamp(6px, 1.6cqw, 10px) clamp(14px, 4cqw, 26px); border-radius: 999px; background: #111; color: #fff; font-size: clamp(11px, 2.4cqw, 15px); font-weight: 700; animation: demo-cta var(--T) var(--ease) infinite; }
+.pf .demo-cta::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid #111; opacity: 0; animation: demo-ripple var(--T) ease-out infinite; }
+.pf .demo-cursor { position: absolute; left: 55%; top: 55%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); animation: demo-cursor var(--T) cubic-bezier(.5,0,.2,1) infinite; }
+@container (max-width: 330px) { .pf .demo-tag { display: none; } }
+
+/* One 9s loop: type URL (0-15%) → logo, name, tagline, chips, button → cursor clicks (~76%) → hold → fade out */
+@keyframes demo-type { 0% { max-width: 0; } 15%, 100% { max-width: calc(var(--n) * 1ch); } }
+@keyframes demo-caret { 50% { opacity: 0; } }
+@keyframes demo-pop { 0%, 16% { opacity: 0; transform: scale(.5); } 23%, 91% { opacity: 1; transform: scale(1); } 97%, 100% { opacity: 0; transform: scale(1); } }
+@keyframes demo-rise-1 { 0%, 21% { opacity: 0; transform: translateY(14px); } 28%, 91% { opacity: 1; transform: none; } 97%, 100% { opacity: 0; } }
+@keyframes demo-rise-2 { 0%, 27% { opacity: 0; transform: translateY(12px); } 34%, 91% { opacity: 1; transform: none; } 97%, 100% { opacity: 0; } }
+@keyframes demo-chip { 0%, 33% { opacity: 0; transform: translateY(10px) scale(.9); } 40%, 91% { opacity: 1; transform: none; } 97%, 100% { opacity: 0; } }
+@keyframes demo-cta { 0%, 46% { opacity: 0; transform: translateY(8px); } 53%, 74% { opacity: 1; transform: none; } 76% { transform: scale(.92); } 79%, 91% { opacity: 1; transform: scale(1); } 97%, 100% { opacity: 0; } }
+@keyframes demo-ripple { 0%, 75% { opacity: 0; transform: scale(1); } 76% { opacity: .5; transform: scale(1); } 86%, 100% { opacity: 0; transform: scale(1.6, 2.2); } }
+@keyframes demo-cursor { 0%, 55% { opacity: 0; transform: translate(70px, 60px); } 58% { opacity: 1; transform: translate(70px, 60px); } 73% { transform: translate(0, 0); } 76% { transform: translate(0, 0) scale(.82); } 79%, 88% { opacity: 1; transform: translate(0, 0) scale(1); } 93%, 100% { opacity: 0; transform: translate(0, 0); } }
+
+/* Only play while the project is on screen; show the finished page without motion. */
+.pf .project:not(.in) .demo * { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .pf .demo * { animation: none !important; }
+  .pf .demo-url .type { max-width: none; }
+  .pf .demo-cursor, .pf .demo-url .caret { display: none; }
+}

@@ -51,48 +51,31 @@ function CountUp({ to }: { to: number }) {
   return <span ref={ref}>{arNum(n)}</span>;
 }
 
-/** Screenshot of a site's current home page at desktop size (1280x800), from WordPress.com's mShots. */
-const siteShot = (url: string) =>
-  `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=1280&h=800&vpw=1280&vph=800`;
-
 /**
- * A soft-edged window showing a site's current look, for project covers. Sites
- * often forbid being embedded, so this is an up-to-date screenshot rather than
- * an iframe. Until the screenshot is ready (the service first returns a small
- * placeholder) or if it fails, the project logo is shown instead.
+ * A short animated "launch" of a project's site, drawn from its own logo and
+ * copy rather than a screenshot or iframe (sites often forbid being embedded):
+ * the address is typed into a browser bar, the page builds itself up, and a
+ * cursor clicks the call to action. Loops while the project is on screen.
  */
-function SitePreview({ url, logo, title }: { url: string; logo?: string; title: string }) {
-  const [ready, setReady] = useState(false);
-  // The service answers with a small "generating" placeholder while it takes a
-  // fresh capture, so ask again a few times until the real screenshot arrives.
-  const [attempt, setAttempt] = useState(0);
-  const retry = () => { if (attempt < 6) setTimeout(() => setAttempt((a) => a + 1), 4000 + attempt * 2000); };
+function SiteDemo({ url, logo, name, tagline, chips }: { url: string; logo: string; name: string; tagline?: string; chips: string[] }) {
   const host = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   return (
-    <div className="site-frame" aria-hidden="true">
-      <div className="site-bar">
+    <div className="demo" aria-hidden="true">
+      <div className="demo-bar">
         <span className="dots"><i /><i /><i /></span>
-        <span className="site-url" lang="en" dir="ltr">{host}</span>
+        <span className="demo-url" dir="ltr"><span className="lock">🔒</span><span className="type" style={{ ["--n" as string]: host.length }}>{host}</span><span className="caret" /></span>
       </div>
-      <div className="site-screen">
-        <img
-          className={`site-shot ${ready ? "ready" : ""}`}
-          src={siteShot(url) + (attempt ? `&r=${attempt}` : "")}
-          alt=""
-          loading="lazy"
-          onLoad={(e) => {
-            const ok = e.currentTarget.naturalWidth > 600;
-            setReady(ok);
-            if (!ok) retry();
-          }}
-          onError={retry}
-        />
-        {!ready && (
-          <div className="site-fallback">
-            {logo && <img src={logo} alt="" width={96} height={96} />}
-            <span lang="en">{title}</span>
-          </div>
-        )}
+      <div className="demo-page">
+        <img className="demo-logo" src={logo} alt="" width={72} height={72} />
+        <b className="demo-name">{name}</b>
+        {tagline && <span className="demo-tag">{tagline}</span>}
+        <ul className="demo-chips">
+          {chips.slice(0, 3).map((c, i) => <li key={c} style={{ ["--i" as string]: i }}>{c}</li>)}
+        </ul>
+        <span className="demo-cta">
+          زيارة الموقع
+          <svg className="demo-cursor" viewBox="0 0 24 24" width="22" height="22"><path d="M5 3l14 8-6.2 1.4L10 19z" fill="#111" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+        </span>
       </div>
     </div>
   );
@@ -245,10 +228,9 @@ export default function HomePage() {
               <div className="projects">
                 {P.projects.map((p, i) => (
                   <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
-                    {p.preview ? (
-                      <a className={`project-cover has-site ${p.bg}`} href={p.link || p.preview} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
-                        <span className="live-pill"><i /> الواجهة الحالية</span>
-                        <SitePreview url={p.preview} logo={p.logo} title={p.titleEn} />
+                    {p.link && p.logo ? (
+                      <a className={`project-cover has-demo ${p.bg}`} href={p.link} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
+                        <SiteDemo url={p.link} logo={p.logo} name={p.brand ?? p.title} tagline={p.tagline} chips={p.points} />
                       </a>
                     ) : (
                       <div className={`project-cover ${p.bg}`}>
