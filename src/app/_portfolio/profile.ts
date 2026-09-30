@@ -29,14 +29,15 @@ export const PROFILE = {
     },
     {
       title: "أتمتة التقديم على الوظائف",
-      titleEn: "Job Application Automation",
+      titleEn: "JobBots",
+      logo: "/projects/jobbots.png",
       label: "منتج أطلقته وبعته",
       problem: "التقديم على الوظائف عملية يدوية متكررة تاخذ ساعات: نفس البيانات، نفس الخطوات، في كل مرة.",
       solution: "أداة تؤتمت خطوات التقديم من البداية للنهاية.",
       result: "وقت أقل وتقديمات أكثر، وأطلقته كمنتج وحقق مبيعات فعلية.",
       points: ["أتمتة", "إطلاق وبيع", "مبيعات فعلية"],
       tags: ["Automation"],
-      link: "",
+      link: "https://www.jobbots.org/",
       bg: "bg-sky",
     },
     {
