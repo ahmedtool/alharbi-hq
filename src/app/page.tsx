@@ -25,30 +25,86 @@ function MaskedWords({ text, baseDelay = 1 }: { text: string; baseDelay?: number
   );
 }
 
-/** Counts up to `to` the first time it scrolls into view. */
-function CountUp({ to }: { to: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [n, setN] = useState(0);
+/**
+ * A number whose digits roll into place like an odometer (each digit spins
+ * from ٠ to its value, staggered). Rolls again whenever `runKey` changes.
+ */
+function Odometer({ value, runKey, run }: { value: number; runKey: number; run: boolean }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    setOn(false);
+    if (!run) return;
+    const r = requestAnimationFrame(() => requestAnimationFrame(() => setOn(true)));
+    return () => cancelAnimationFrame(r);
+  }, [runKey, run]);
+  const text = arNum(value);
+  const digits = "٠١٢٣٤٥٦٧٨٩";
+  let n = 0;
+  return (
+    <span className="odo" aria-label={text}>
+      {[...text].map((ch, i) => {
+        const d = digits.indexOf(ch);
+        if (d < 0) return <span key={i} className="odo-sep" aria-hidden="true">{ch}</span>;
+        const k = n++;
+        return (
+          <span key={i} className="odo-col" aria-hidden="true">
+            {/* The final digit (invisible) sizes the column, so spacing matches normal text. */}
+            <span className="odo-size">{ch}</span>
+            <span className="odo-strip" style={{ transform: `translateY(${on ? -d * 10 : 0}%)`, transitionDelay: `${k * 90}ms` }}>
+              {[...digits].map((g) => <span key={g}>{g}</span>)}
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+/**
+ * The key figures in one dark card: the current figure rolls in like an
+ * odometer, and tabs at the bottom switch figures (automatically every 6s
+ * while on screen, with a filling progress line, until the visitor picks one).
+ */
+function StatsCard({ items }: { items: { value: number; label: string; unit: string; title: string; desc: string }[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [seen, setSeen] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) { setN(to); return; }
-    let raf = 0;
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      io.disconnect();
-      const start = performance.now();
-      const tick = (t: number) => {
-        const p = Math.min((t - start) / 1800, 1);
-        setN(Math.round(to * (1 - Math.pow(1 - p, 3))));
-        if (p < 1) raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
-    }, { threshold: 0.4 });
+    const io = new IntersectionObserver(([e]) => { setVisible(e.isIntersecting); if (e.isIntersecting) setSeen(true); }, { threshold: 0.4 });
     io.observe(el);
-    return () => { io.disconnect(); cancelAnimationFrame(raf); };
-  }, [to]);
-  return <span ref={ref}>{arNum(n)}</span>;
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!auto || !visible) return;
+    const t = setTimeout(() => setActive((a) => (a + 1) % items.length), 6000);
+    return () => clearTimeout(t);
+  }, [auto, visible, active, items.length]);
+  const m = items[active];
+  return (
+    <div className="stats-card" ref={ref}>
+      <div className="stats-glow" aria-hidden="true" />
+      <div key={active} className="stats-body">
+        <div className="stats-figure">
+          <b>+<Odometer value={m.value} runKey={active} run={seen} /></b>
+          <span>{m.unit}</span>
+        </div>
+        <h3>{m.title}</h3>
+        <p>{m.desc}</p>
+      </div>
+      <div className="stats-tabs" role="tablist">
+        {items.map((it, i) => (
+          <button key={it.label} type="button" role="tab" aria-selected={i === active} className={i === active ? "on" : ""} onClick={() => { setAuto(false); setActive(i); }}>
+            <span>{it.label}</span>
+            <i>{i === active && auto && visible && <em key={active} />}</i>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -332,15 +388,7 @@ export default function HomePage() {
                 <p>الأرقام شهادة على الإنجاز.</p>
               </div>
               <div className="impact-grid">
-                <Slider count={P.impact.length} interval={6000} className="slider-sm">
-                  {P.impact.map((m) => (
-                    <div key={m.title} className="stat-slide">
-                      <div className="impact-num"><b>+<CountUp to={m.value} /></b><span>{m.unit}</span></div>
-                      <h3>{m.title}</h3>
-                      <p>{m.desc}</p>
-                    </div>
-                  ))}
-                </Slider>
+                <StatsCard items={P.impact} />
                 <div className="clients-card">
                   <div>
                     <h3>انضم لقائمة عملائي</h3>

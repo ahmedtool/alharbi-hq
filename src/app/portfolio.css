@@ -422,7 +422,7 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .clients-card h3 { font-size: 1.15rem; }
 .pf .clients-card p { color: var(--muted); }
 .pf .clients-card .btn { align-self: flex-start; }
-.pf .logo-marquee { overflow: hidden; margin-inline: -28px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+.pf .logo-marquee { direction: ltr; overflow: hidden; margin-inline: -28px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
 .pf .logo-track { list-style: none; display: flex; gap: 12px; width: max-content; direction: ltr; animation: logo-slide 50s linear infinite; }
 .pf .logo-marquee:hover .logo-track { animation-play-state: paused; }
 .pf .logo-track img { display: block; width: 96px; height: 64px; object-fit: contain; padding: 8px; border-radius: 8px; background: #fff; border: 1px solid var(--line); filter: grayscale(1); transition: filter .3s; }
@@ -431,3 +431,30 @@ html:has(.pf) { scroll-behavior: smooth; }
 /* Always one moving row; just slower when the device asks for less motion. */
 @media (prefers-reduced-motion: reduce) { .pf .logo-track { animation-duration: 90s; } }
 @media (max-width: 800px) { .pf .impact-grid { grid-template-columns: minmax(0, 1fr); } .pf .slider-sm, .pf .clients-card { padding: 20px; } .pf .logo-marquee { margin-inline: -20px; } }
+
+/* Key figures: dark card with an odometer number and tabs */
+.pf .stats-card { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; min-height: 300px; padding: 28px; border-radius: 12px; background: #111; color: #f2f2f0; isolation: isolate; }
+.pf .stats-glow { position: absolute; z-index: -1; width: 70%; aspect-ratio: 1; top: -35%; inset-inline-start: -15%; border-radius: 50%; background: radial-gradient(circle, rgba(232,85,62,.55), transparent 65%); filter: blur(10px); animation: glow-drift 12s ease-in-out infinite alternate; }
+.pf .stats-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 28px 28px; -webkit-mask-image: linear-gradient(to bottom, #000, transparent 80%); mask-image: linear-gradient(to bottom, #000, transparent 80%); }
+@keyframes glow-drift { to { transform: translate(-30%, 40%) scale(1.2); } }
+.pf .stats-body { display: grid; gap: 8px; animation: stats-in .7s var(--ease) both; }
+@keyframes stats-in { from { opacity: 0; transform: translateY(16px); } }
+.pf .stats-figure { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.pf .stats-figure b { font-size: clamp(3rem, 7vw, 4.8rem); line-height: 1; letter-spacing: -0.02em; display: inline-flex; align-items: baseline; }
+.pf .stats-figure > span { color: #a3a3a0; font-weight: 700; }
+.pf .stats-body h3 { font-size: 1.2rem; margin-top: 6px; }
+.pf .stats-body p { color: #bdbdb9; font-size: .98rem; max-width: 420px; }
+.pf .odo { display: inline-flex; direction: ltr; }
+.pf .odo-col { position: relative; display: inline-block; height: 1em; overflow: hidden; line-height: 1; }
+.pf .odo-size { visibility: hidden; }
+.pf .odo-strip { position: absolute; top: 0; left: 50%; display: flex; flex-direction: column; align-items: center; margin-left: -.5em; width: 1em; transition: transform 1.6s cubic-bezier(.16,1,.3,1); }
+.pf .odo-strip span { height: 1em; line-height: 1; text-align: center; }
+.pf .odo-sep { line-height: 1; }
+.pf .stats-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; }
+.pf .stats-tabs button { display: grid; gap: 10px; text-align: start; color: #8c8c88; font-weight: 700; font-size: .92rem; transition: color .3s; }
+.pf .stats-tabs button.on, .pf .stats-tabs button:hover { color: #f2f2f0; }
+.pf .stats-tabs i { position: relative; display: block; height: 2px; background: rgba(255,255,255,.18); overflow: hidden; }
+.pf .stats-tabs button.on i { background: rgba(255,255,255,.35); }
+.pf .stats-tabs button.on i:not(:has(em)) { background: #f2f2f0; }
+.pf .stats-tabs em { position: absolute; inset: 0; background: #f2f2f0; transform-origin: right; animation: dot-fill 6s linear forwards; }
+@media (prefers-reduced-motion: reduce) { .pf .stats-glow { animation: none; } .pf .odo-strip { transition-duration: .6s; } }
