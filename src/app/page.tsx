@@ -51,34 +51,35 @@ function CountUp({ to }: { to: number }) {
   return <span ref={ref}>{arNum(n)}</span>;
 }
 
-/** Screenshot of a site's current home page at phone size (390x844), from WordPress.com's mShots. */
+/** Screenshot of a site's current home page at desktop size (1280x800), from WordPress.com's mShots. */
 const siteShot = (url: string) =>
-  `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=780&h=1688&vpw=390&vph=844`;
+  `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=1280&h=800&vpw=1280&vph=800`;
 
 /**
- * A phone showing a site's current look, for project covers. Sites often forbid
- * being embedded (as JobBots does), so this shows an up-to-date screenshot
- * rather than an iframe. Until the screenshot is ready (the service first
- * returns a small placeholder) or if it fails, the project logo is shown.
+ * A soft-edged window showing a site's current look, for project covers. Sites
+ * often forbid being embedded, so this is an up-to-date screenshot rather than
+ * an iframe. Until the screenshot is ready (the service first returns a small
+ * placeholder) or if it fails, the project logo is shown instead.
  */
-function LivePhone({ url, logo, title }: { url: string; logo?: string; title: string }) {
+function SitePreview({ url, logo, title }: { url: string; logo?: string; title: string }) {
   const [ready, setReady] = useState(false);
+  const host = url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   return (
-    <div className="phone" aria-hidden="true">
-      <div className="phone-screen">
+    <div className="site-frame" aria-hidden="true">
+      <div className="site-bar">
+        <span className="dots"><i /><i /><i /></span>
+        <span className="site-url" lang="en" dir="ltr">{host}</span>
+      </div>
+      <div className="site-screen">
         <img
-          className={`phone-shot ${ready ? "ready" : ""}`}
+          className={`site-shot ${ready ? "ready" : ""}`}
           src={siteShot(url)}
           alt=""
           loading="lazy"
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            // A real capture is portrait; the "generating" placeholder isn't.
-            setReady(img.naturalHeight > img.naturalWidth * 1.5);
-          }}
+          onLoad={(e) => setReady(e.currentTarget.naturalWidth >= 800)}
         />
         {!ready && (
-          <div className="phone-fallback">
+          <div className="site-fallback">
             {logo && <img src={logo} alt="" width={96} height={96} />}
             <span lang="en">{title}</span>
           </div>
@@ -236,9 +237,9 @@ export default function HomePage() {
                 {P.projects.map((p, i) => (
                   <article key={p.titleEn} className={`project st ${i === 0 ? "lead" : ""}`} style={{ ["--i" as string]: i }}>
                     {p.preview ? (
-                      <a className={`project-cover has-phone ${p.bg}`} href={p.link || p.preview} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
+                      <a className={`project-cover has-site ${p.bg}`} href={p.link || p.preview} target="_blank" rel="noopener" aria-label={`زيارة ${p.titleEn}`}>
                         <span className="live-pill"><i /> الواجهة الحالية</span>
-                        <LivePhone url={p.preview} logo={p.logo} title={p.titleEn} />
+                        <SitePreview url={p.preview} logo={p.logo} title={p.titleEn} />
                       </a>
                     ) : (
                       <div className={`project-cover ${p.bg}`}>
