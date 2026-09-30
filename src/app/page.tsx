@@ -82,11 +82,11 @@ function SiteDemo({ url, logo, name, tagline, chips }: { url: string; logo: stri
 }
 
 /**
- * Horizontal slider for the projects: one project per slide (swipe on phones,
- * arrows/dots elsewhere). Advances on its own every 9s (one demo loop) while
- * in view, until the visitor touches it.
+ * Horizontal slider, one item per slide (swipe on phones, arrows/dots
+ * elsewhere). Advances on its own every `interval` ms while in view, until
+ * the visitor touches it.
  */
-function WorkSlider({ count, children }: { count: number; children: React.ReactNode }) {
+function Slider({ count, interval = 9000, className = "", children }: { count: number; interval?: number; className?: string; children: React.ReactNode }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [auto, setAuto] = useState(true);
@@ -124,12 +124,12 @@ function WorkSlider({ count, children }: { count: number; children: React.ReactN
   }, []);
   useEffect(() => {
     if (!auto || !visible || hover || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setTimeout(() => go(active + 1), 9000);
+    const t = setTimeout(() => go(active + 1), interval);
     return () => clearTimeout(t);
   }, [auto, visible, hover, active]);
 
   return (
-    <div className="slider" aria-roledescription="عرض شرائح" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+    <div className={`slider ${className}`} style={{ ["--interval" as string]: `${interval}ms` }} aria-roledescription="عرض شرائح" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <div className="slider-track" ref={trackRef} onPointerDown={() => setAuto(false)} onWheel={(e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) setAuto(false); }}>
         {children}
       </div>
@@ -293,7 +293,7 @@ export default function HomePage() {
                 <div><div className="eyebrow">٠١ · What I Build</div><h2>وش أبني</h2></div>
                 <p>كل مشروع مشكلة تشغيلية تحولت لحل رقمي.</p>
               </div>
-              <WorkSlider count={P.projects.length}>
+              <Slider count={P.projects.length}>
                 {P.projects.map((p, i) => (
                   <article key={p.titleEn} className="project slide" aria-roledescription="شريحة" aria-label={`${i + 1} من ${P.projects.length}: ${p.title}`}>
                     {p.link && p.logo ? (
@@ -320,7 +320,7 @@ export default function HomePage() {
                     </div>
                   </article>
                 ))}
-              </WorkSlider>
+              </Slider>
             </div>
           </section>
 
@@ -331,26 +331,33 @@ export default function HomePage() {
                 <div><div className="eyebrow">٠٢ · Impact</div><h2>أرقامي</h2></div>
                 <p>الأرقام شهادة على الإنجاز.</p>
               </div>
-              <div className="impact">
-                {P.impact.map((m, i) => (
-                  <div key={m.title} className="impact-item st" style={{ ["--i" as string]: i }}>
-                    <div className="impact-num"><b>+<CountUp to={m.value} /></b><span>{m.unit}</span></div>
-                    <h3>{m.title}</h3>
-                    <p>{m.desc}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="clients">
-                <div>
-                  <h3>انضم لقائمة عملائي</h3>
-                  <p>ما أبني مشاريع وبس، أبني شراكات نجاح.</p>
-                </div>
-                <Link className="btn btn-primary" href="/support/submit">كن عميلي التالي</Link>
-                <ul className="clients-logos">
-                  {P.clients.map((c, i) => (
-                    <li key={c.logo} {...st(i + 2)}><img src={c.logo} alt={`شعار ${c.name}`} width={72} height={72} loading="lazy" /></li>
+              <div className="impact-grid">
+                <Slider count={P.impact.length} interval={6000} className="slider-sm">
+                  {P.impact.map((m) => (
+                    <div key={m.title} className="stat-slide">
+                      <div className="impact-num"><b>+<CountUp to={m.value} /></b><span>{m.unit}</span></div>
+                      <h3>{m.title}</h3>
+                      <p>{m.desc}</p>
+                    </div>
                   ))}
-                </ul>
+                </Slider>
+                <div className="clients-card">
+                  <div>
+                    <h3>انضم لقائمة عملائي</h3>
+                    <p>ما أبني مشاريع وبس، أبني شراكات نجاح.</p>
+                  </div>
+                  {/* Logos slide past on a loop (the list is doubled so it wraps seamlessly). */}
+                  <div className="logo-marquee">
+                    <ul className="logo-track">
+                      {[...P.clients, ...P.clients].map((c, i) => (
+                        <li key={i} aria-hidden={i >= P.clients.length}>
+                          <img src={c.logo} alt={i < P.clients.length ? `شعار ${c.name}` : ""} width={96} height={64} loading="lazy" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <Link className="btn btn-primary" href="/support/submit">كن عميلي التالي</Link>
+                </div>
               </div>
             </div>
           </section>
