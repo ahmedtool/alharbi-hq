@@ -446,25 +446,18 @@ export default function HomePage() {
           <section id="skills" className="reveal">
             <div className="container">
               <div className="sec-head"><div><div className="eyebrow">٠٥</div><h2>مهاراتي</h2></div></div>
-              <div className="skills">
+              <ul className="skill-rows">
                 {P.skills.map((g, i) => (
-                  <div key={g.group} className="skill-group st" style={{ ["--i" as string]: i }}>
+                  <li key={g.group} className="st" style={{ ["--i" as string]: i }}>
                     <span className="num">٠{arNum(i + 1)}</span>
                     <h3>{g.group}</h3>
-                    <ul>{g.items.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>
-                  </div>
+                    <div className="skill-chips">{g.items.map((x) => <span key={x} className="chip">{x}</span>)}</div>
+                  </li>
                 ))}
-              </div>
-              <div className="extras">
-                <div>
-                  <h3>اللغات</h3>
-                  <ul className="langs">{P.languages.map((l, i) => <li key={l.name} {...st(i)}><b>{l.name}</b><span>{l.level}</span></li>)}</ul>
-                </div>
-                <div>
-                  <h3>اهتماماتي</h3>
-                  <div className="interests">{P.interests.map((x, i) => <span key={x} className="pill st" style={{ ["--i" as string]: i }}>{x}</span>)}</div>
-                </div>
-              </div>
+              </ul>
+              <p className="langs-line">
+                <b>اللغات:</b> {P.languages.map((l) => `${l.name} (${l.level})`).join(" · ")}
+              </p>
             </div>
           </section>
 

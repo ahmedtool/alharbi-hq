@@ -458,3 +458,18 @@ html:has(.pf) { scroll-behavior: smooth; }
 .pf .stats-tabs button.on i:not(:has(em)) { background: #f2f2f0; }
 .pf .stats-tabs em { position: absolute; inset: 0; background: #f2f2f0; transform-origin: right; animation: dot-fill 6s linear forwards; }
 @media (prefers-reduced-motion: reduce) { .pf .stats-glow { animation: none; } .pf .odo-strip { transition-duration: .6s; } }
+
+/* Skills: one compact row per area */
+.pf .skill-rows { list-style: none; border-top: 1px solid var(--line); }
+.pf .skill-rows li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); transition: padding .3s var(--ease); }
+.pf .skill-rows li:hover { padding-inline-start: 10px; }
+.pf .skill-rows .num { color: var(--muted); font-size: .85rem; font-weight: 600; }
+.pf .skill-rows h3 { font-size: 1.15rem; }
+.pf .skill-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.pf .langs-line { margin-top: 20px; color: var(--muted); font-size: .95rem; }
+.pf .langs-line b { color: var(--ink); }
+@media (max-width: 700px) {
+  .pf .skill-rows li { grid-template-columns: 32px minmax(0, 1fr); row-gap: 8px; }
+  .pf .skill-chips { grid-column: 2; justify-content: flex-start; }
+}
+.pf .skill-chips .chip { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--ink-soft); font-size: .85rem; font-weight: 600; unicode-bidi: isolate; }
