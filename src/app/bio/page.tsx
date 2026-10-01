@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Globe, Send, FileText, Share2, Check } from 'lucide-react';
 import { PublicShell } from '@/components/app/public-shell';
 import { logoAt } from '@/lib/brand';
 import { db } from '@/lib/db';
@@ -114,25 +114,44 @@ export default function BioPage() {
 
     const socialLabel: Record<string, string> = { x: 'X', tiktok: 'TikTok', github: 'GitHub', whatsapp: 'واتساب', email: 'الإيميل' };
     const links = [
-        { label: 'موقعي الشخصي', hint: 'نبذة وأعمالي', href: '/' },
-        { label: 'اطلب مشروع', hint: 'أرسل طلبك وأرد عليك', href: '/support/submit' },
+        { label: 'موقعي الشخصي', hint: 'نبذة وأعمالي', href: '/', icon: Globe },
+        { label: 'السيرة الذاتية', hint: 'خبرتي ومهاراتي، وتنحمّل PDF', href: '/cv', icon: FileText },
+        { label: 'اطلب مشروع', hint: 'أرسل طلبك وأرد عليك', href: '/support/submit', icon: Send },
     ];
+
+    const [shared, setShared] = useState(false);
+    const share = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try { await navigator.share({ title: 'أحمد الحربي | روابطي', url }); } catch { /* cancelled */ }
+            return;
+        }
+        try { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1800); } catch { /* ignore */ }
+    };
 
     return (
         <PublicShell active="bio">
-            <div className="pf pf-bar bio">
-                <div className="container bio-wrap">
+            <div className="pf pf-bar cv bio">
+                <article className="container cv-sheet bio-sheet">
                     {/* الرأس */}
-                    <header className="bio-head">
-                        <img className="bio-logo bio-in" style={{ ['--d' as string]: 0 }} src={logoAt(192)} alt={`شعار ${pageData.name}`} width={88} height={88} />
-                        <div className="eyebrow bio-in" style={{ ['--d' as string]: 1 }} lang="en">Ahmed Alharbi</div>
-                        <h1 className="bio-in" style={{ ['--d' as string]: 2 }}>{pageData.name}</h1>
-                        <p className="bio-in" style={{ ['--d' as string]: 3 }}>{pageData.bio}</p>
+                    <header className="cv-head">
+                        <img className="cv-avatar" src={logoAt(192)} alt={`شعار ${pageData.name}`} width={84} height={84} />
+                        <div className="cv-id">
+                            <h1>{pageData.name}</h1>
+                            <p className="cv-role">العمليات والتحول الرقمي<span className="cv-role-en" lang="en" dir="ltr">Digital Operations &amp; Transformation</span></p>
+                            <p className="bio-tagline">{pageData.bio}</p>
+                        </div>
+                        <div className="cv-actions">
+                            <button type="button" className="btn btn-primary" onClick={share}>
+                                {shared ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />} {shared ? 'تم النسخ' : 'مشاركة'}
+                            </button>
+                        </div>
                     </header>
 
                     {/* الوصول بالرقم */}
-                    <section className="bio-block bio-in" style={{ ['--d' as string]: 4 }}>
-                        <div className="sec-head bio-rule"><div><div className="eyebrow">٠١</div><h2>الوصول بالرقم</h2></div><p>اكتب الرقم اللي شفته في المقطع</p></div>
+                    <section className="cv-sec">
+                        <h2><span>٠١</span> الوصول بالرقم</h2>
+                        <p className="cv-place">اكتب الرقم اللي شفته في المقطع</p>
                         <form onSubmit={handleSearch} className="bio-form">
                             <label className="bio-field bio-field-num">
                                 <span>#</span>
@@ -162,32 +181,42 @@ export default function BioPage() {
                     </section>
 
                     {/* الروابط */}
-                    <section className="bio-block bio-in" style={{ ['--d' as string]: 5 }}>
-                        <div className="sec-head bio-rule"><div><div className="eyebrow">٠٢</div><h2>روابطي</h2></div></div>
-                        <ul className="bio-links">
-                            {links.map((l) => (
-                                <li key={l.href}><a href={l.href}><span><b>{l.label}</b><small>{l.hint}</small></span><i aria-hidden="true">↖</i></a></li>
-                            ))}
-                            {pageData.socials.map((social) => (
-                                <li key={social.platform}>
-                                    <a href={social.url} {...(social.url.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })} aria-label={social.url === "/" ? `${socialLabel[social.platform] ?? social.platform}: موقعي الشخصي` : `تواصل معي عبر ${socialLabel[social.platform] ?? social.platform}`}>
-                                        <span className="bio-social">
-                                            <em>
-                                                {social.platform === 'x' && <XIcon />}
-                                                {social.platform === 'tiktok' && <TikTokIcon />}
-                                                {social.platform === 'github' && <GitHubIcon />}
-                                                {social.platform === 'whatsapp' && <WhatsAppIcon />}
-                                                {social.platform === 'email' && <Mail />}
-                                            </em>
-                                            <b>{socialLabel[social.platform] ?? social.platform}</b>
-                                        </span>
+                    <section className="cv-sec">
+                        <h2><span>٠٢</span> روابطي</h2>
+                        <ul className="bio-cards">
+                            {links.map(({ href, label, hint, icon: Icon }) => (
+                                <li key={href}>
+                                    <a href={href}>
+                                        <em><Icon /></em>
+                                        <span><b>{label}</b><small>{hint}</small></span>
                                         <i aria-hidden="true">↖</i>
                                     </a>
                                 </li>
                             ))}
                         </ul>
                     </section>
-                </div>
+
+                    {/* الحسابات */}
+                    <section className="cv-sec">
+                        <h2><span>٠٣</span> حساباتي</h2>
+                        <ul className="bio-socials">
+                            {pageData.socials.map((social) => (
+                                <li key={social.platform}>
+                                    <a href={social.url} {...(social.url.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })} aria-label={`تواصل معي عبر ${socialLabel[social.platform] ?? social.platform}`}>
+                                        <em>
+                                            {social.platform === 'x' && <XIcon />}
+                                            {social.platform === 'tiktok' && <TikTokIcon />}
+                                            {social.platform === 'github' && <GitHubIcon />}
+                                            {social.platform === 'whatsapp' && <WhatsAppIcon />}
+                                            {social.platform === 'email' && <Mail />}
+                                        </em>
+                                        <span>{socialLabel[social.platform] ?? social.platform}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                </article>
             </div>
         </PublicShell>
     );
