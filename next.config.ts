@@ -2,6 +2,10 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  // The links page (/bio) was removed; old links (e.g. in videos) land on the home page.
+  async redirects() {
+    return [{ source: '/bio', destination: '/', permanent: true }];
+  },
   async rewrites() {
     return [
       // Block common vulnerability scans

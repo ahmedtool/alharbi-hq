@@ -132,7 +132,6 @@ export const PROFILE = {
       { label: "X", url: "https://x.com/ahmedsupsa" },
       { label: "TikTok", url: "https://www.tiktok.com/@ahmedsupsa" },
       { label: "GitHub", url: "https://github.com/ahmedsupsa" },
-      { label: "صفحة روابطي", url: "/bio" },
     ],
   },
 };

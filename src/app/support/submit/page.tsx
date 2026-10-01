@@ -15,6 +15,7 @@ import { collection, addDoc, Timestamp, getDocs } from "@/lib/db";
 import { ref, uploadBytes, getDownloadURL } from "@/lib/storage";
 import { Loader2, Send, File as FileIcon, X, Check, Mail, Phone, User, Package, MessageSquare, Briefcase, ArrowLeft, ArrowRight } from "lucide-react";
 import { PublicShell } from "@/components/app/public-shell";
+import { logoAt } from "@/lib/brand";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -207,7 +208,8 @@ export default function SubmitTicketPage() {
     if (isSubmitted) {
         return (
             <PublicShell active="request">
-             <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 py-16">
+             <div className="bg-muted min-h-[70vh] px-3 py-6 sm:py-10">
+             <div className="req-sheet mx-auto max-w-[760px] rounded-3xl border bg-background flex flex-col items-center justify-center text-center px-6 py-16">
                 <AnimatePresence>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -230,11 +232,12 @@ export default function SubmitTicketPage() {
                             </div>
                             <div className="mt-8 flex justify-center gap-2 flex-wrap">
                                 <Button asChild><a href="/">الصفحة الرئيسية</a></Button>
-                                <Button asChild variant="outline"><a href="/bio">روابطي</a></Button>
+                                <Button asChild variant="outline"><a href="/cv">السيرة الذاتية</a></Button>
                             </div>
                          </div>
                     </motion.div>
                  </AnimatePresence>
+            </div>
             </div>
             </PublicShell>
         )
@@ -250,25 +253,27 @@ export default function SubmitTicketPage() {
 
     return (
         <PublicShell active="request">
-            <div className="pf pf-bar bio">
-                <div className="container bio-wrap req-wrap">
-                    <header className="bio-head req-head">
-                        <div className="eyebrow bio-in" style={{ ['--d' as string]: 0 }} lang="en">Start a project</div>
-                        <h1 className="bio-in" style={{ ['--d' as string]: 1 }}>اطلب مشروع</h1>
-                        <p className="bio-in" style={{ ['--d' as string]: 2 }}>عندك فكرة، طلب خدمة، أو فرصة تعاون؟ عبّ النموذج وأرد عليك بأقرب وقت.</p>
-                    </header>
-                    <ol className="req-steps bio-in" style={{ ['--d' as string]: 3 }} aria-label="خطوات الطلب">
-                        <li className={currentStep === 1 ? "active" : "done"}><b>٠١</b> معلومات التواصل</li>
-                        <li className={currentStep === 2 ? "active" : ""}><b>٠٢</b> تفاصيل الطلب</li>
-                    </ol>
-                </div>
+        <div className="bg-muted px-3 py-6 sm:py-10">
+        <div className="req-sheet mx-auto max-w-[760px] rounded-3xl border bg-background text-right">
+            <div className="pf pf-bar req-sheet-head">
+                <header className="cv-head">
+                    <img className="cv-avatar" src={logoAt(192)} alt="" width={84} height={84} />
+                    <div className="cv-id">
+                        <h1>اطلب مشروع</h1>
+                        <p className="cv-role">عندك فكرة، طلب خدمة، أو فرصة تعاون؟<span className="cv-role-en" lang="en" dir="ltr">Start a project</span></p>
+                    </div>
+                </header>
+                <ol className="req-steps" aria-label="خطوات الطلب">
+                    <li className={currentStep === 1 ? "active" : "done"}><b>٠١</b> معلومات التواصل</li>
+                    <li className={currentStep === 2 ? "active" : ""}><b>٠٢</b> تفاصيل الطلب</li>
+                </ol>
             </div>
-        <div className="container mx-auto max-w-[720px] px-4 pb-24 text-right">
+        <div className="px-1 sm:px-4 pb-6">
             
             <AnimatePresence mode="wait">
                 {currentStep === 1 && (
                      <motion.div key="step1" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full">
-                        <Card className="w-full shadow-none rounded-lg">
+                        <Card className="w-full shadow-none border-0 bg-transparent">
                             <CardHeader>
                                 <div className="text-xs font-bold tracking-widest text-muted-foreground">٠١ / ٠٢</div>
                                 <CardTitle className="text-2xl">معلومات التواصل</CardTitle>
@@ -313,7 +318,7 @@ export default function SubmitTicketPage() {
 
                  {currentStep === 2 && (
                     <motion.div key="step2" variants={cardVariants} initial="hidden" animate="visible" exit="exit" className="w-full">
-                        <Card className="w-full shadow-none rounded-lg">
+                        <Card className="w-full shadow-none border-0 bg-transparent">
                             <CardHeader>
                                 <div className="text-xs font-bold tracking-widest text-muted-foreground">٠٢ / ٠٢</div>
                                 <CardTitle className="text-2xl">تفاصيل الطلب</CardTitle>
@@ -425,6 +430,8 @@ export default function SubmitTicketPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
+        </div>
         </div>
         </PublicShell>
     );

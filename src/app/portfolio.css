@@ -687,3 +687,11 @@ html:has(.pf) { scroll-behavior: smooth; }
   .pf .bio-socials { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
   .pf .bio-socials a { padding: 12px 2px; font-size: .72rem; }
 }
+
+/* ============ Request a project, in the sheet style ============ */
+.req-sheet { box-shadow: 0 30px 80px -40px rgba(0,0,0,.25); animation: bio-rise .9s cubic-bezier(.2,.7,.2,1) both; }
+.pf.req-sheet-head { min-height: 0; background: transparent; padding: 40px 40px 8px; border-radius: 24px 24px 0 0; }
+.pf.req-sheet-head .cv-head { grid-template-columns: auto minmax(0, 1fr); }
+.pf.req-sheet-head .cv-role { font-weight: 600; color: var(--ink-soft); }
+.pf.req-sheet-head .req-steps { margin-top: 22px; }
+@media (max-width: 760px) { .pf.req-sheet-head { padding: 24px 20px 4px; } .pf.req-sheet-head .cv-avatar { width: 60px; height: 60px; border-radius: 16px; } }

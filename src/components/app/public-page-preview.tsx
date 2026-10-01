@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 type Shortcut = { href: string; icon: LucideIcon; title: string; hint: string };
 
 type Props = {
-  /** Public path to preview, e.g. "/bio". */
+  /** Public path to preview, e.g. "/support/submit". */
   path: string;
   title: string;
   description: string;

@@ -56,7 +56,7 @@ export function AppSidebar() {
   const router = useRouter();
   const { toast } = useToast();
   const [devMenuOpen, setDevMenuOpen] = React.useState(pathname.startsWith('/developer'));
-  const [toolsMenuOpen, setToolsMenuOpen] = React.useState(pathname.startsWith('/tools') || pathname.startsWith('/tools-directory') || pathname.startsWith('/numbered-links'));
+  const [toolsMenuOpen, setToolsMenuOpen] = React.useState(pathname.startsWith('/tools') || pathname.startsWith('/tools-directory'));
   const [financeMenuOpen, setFinanceMenuOpen] = React.useState(pathname.startsWith('/finance'));
   const [logoUrl, setLogoUrl] = React.useState("https://res.cloudinary.com/dw5sydtj6/image/upload/v1755563838/%D8%A7%D9%84%D8%AD%D8%B1%D8%A8%D9%8A_imqtxp.png");
   const [newTicketsCount, setNewTicketsCount] = React.useState(0);
@@ -93,7 +93,7 @@ export function AppSidebar() {
   const isActive = (path: string, exact: boolean = false) => {
     if (exact) return pathname === path;
     if(path === '/dashboard') return pathname === '/dashboard';
-    if (path === '/tools' && (pathname.startsWith('/tools-directory') || pathname.startsWith('/numbered-links'))) return true;
+    if (path === '/tools' && (pathname.startsWith('/tools-directory'))) return true;
     return pathname.startsWith(path);
   };
   
@@ -173,14 +173,6 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/bio")}>
-              <Link href="/bio" prefetch={true}>
-                <Link2 />
-                <span>روابطي (Bio)</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
 
           <Collapsible asChild open={financeMenuOpen} onOpenChange={setFinanceMenuOpen}>
             <SidebarMenuItem>
@@ -236,11 +228,6 @@ export function AppSidebar() {
                        <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={isActive('/tools-directory')}>
                               <Link href="/tools-directory" prefetch={true}><Library /> مكتبة الأدوات</Link>
-                          </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={isActive('/numbered-links')}>
-                              <Link href="/numbered-links" prefetch={true}><Hash /> الوصول بالرقم</Link>
                           </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>

@@ -16,7 +16,6 @@ export const navLinks = [
       { name: "الدعم الفني", href: "/support", icon: LifeBuoy },
       { name: "مركز الأفكار", href: "/ideas", icon: Lightbulb },
       { name: "المساعد الذكي", href: "/ai-assistant", icon: MessageCircle },
-      { name: "صفحة الروابط", href: "/bio-preview", icon: Link2 },
       { name: "صفحة طلب المشروع", href: "/request-preview", icon: Send },
     ]
   },
@@ -33,7 +32,6 @@ export const navLinks = [
     category: "الأدوات والتطبيقات",
     links: [
         { name: "إدارة الروابط العامة", href: "/tools-directory", icon: Library },
-        { name: "إدارة الوصول بالرقم", href: "/numbered-links", icon: Hash },
         { name: "اداة تسعير المنتجات", href: "/tools/pricing-calculator", icon: Calculator },
         { name: "اداة الفاتورة", href: "/tools/invoice-generator", icon: FileDigit },
         { name: "اداة بناء العقود", href: "/tools/contract-builder", icon: FileJson },
