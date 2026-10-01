@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PROFILE } from "./_portfolio/profile";
 import { logoAt } from "@/lib/brand";
+import { IslandHeader } from "@/components/app/island-header";
 import "./portfolio.css";
 
 const P = PROFILE;
@@ -210,11 +211,9 @@ const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as
 
 export default function HomePage() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLSpanElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [intro, setIntro] = useState<"hidden" | "play" | "lift">("hidden");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [dark, setDark] = useState(false);
 
   // Intro screen once per visit, then the hero entrance.
   useEffect(() => {
@@ -258,15 +257,6 @@ export default function HomePage() {
     return () => removeEventListener("scroll", onScroll);
   }, []);
 
-  // Dark mode shares the dashboard's setting (localStorage "theme" + html.dark).
-  useEffect(() => { setDark(document.documentElement.classList.contains("dark")); }, []);
-  const toggleTheme = () => {
-    const next = !dark;
-    document.documentElement.classList.toggle("dark", next);
-    try { localStorage.setItem("theme", next ? "dark" : "light"); } catch {}
-    setDark(next);
-  };
-
   const words = [...P.interests, ...P.skills.map((g) => g.group)];
   const nav = [
     { href: "#work", label: "وش أبني" },
@@ -274,7 +264,6 @@ export default function HomePage() {
     { href: "#about", label: "نبذة" },
     { href: "#experience", label: "خبراتي" },
     { href: "#skills", label: "مهاراتي" },
-    { href: "#contact", label: "تواصل معي" },
   ];
 
   return (
@@ -288,27 +277,8 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="progress" ref={progressRef} aria-hidden="true" />
 
-        <div className="pf-sticky">
-          <a className="skip" href="#main">تخطَّ إلى المحتوى</a>
-          <header className="site-header">
-            <div className="container nav">
-              <a href="#" className="logo" aria-label={`${P.name} - الرئيسية`}>
-                <img className="logo-img" src={logoAt(96)} alt="" width={36} height={36} />
-                <span>{P.name}<small lang="en">{P.nameEn}</small></span>
-              </a>
-              <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
-                <a href="#" className="active" onClick={() => setMenuOpen(false)}>الرئيسية</a>
-                {nav.map((n) => <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)}>{n.label}</a>)}
-              </nav>
-              <div className="nav-actions">
-                <button className="icon-btn" onClick={toggleTheme} aria-label="تبديل الوضع الليلي">{dark ? "☀️" : "🌙"}</button>
-                <button className="icon-btn menu-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="القائمة">☰</button>
-              </div>
-            </div>
-          </header>
-        </div>
+        <IslandHeader name={P.name} items={nav} cta={{ href: "#contact", label: "تواصل معي" }} progressRef={progressRef} />
 
         <main id="main">
           {/* الواجهة */}
@@ -480,34 +450,16 @@ export default function HomePage() {
           </section>
         </main>
 
-        <footer className="site-footer">
-          <div className="container">
-            <div className="foot-grid">
-              <div>
-                <a href="#" className="logo"><img className="logo-img" src={logoAt(96)} alt="" width={36} height={36} /><span>{P.name}</span></a>
-                <p style={{ marginTop: 12, maxWidth: 380 }}>{P.intro}</p>
-              </div>
-              <div>
-                <h5>روابط</h5>
-                <ul>
-                  {nav.map((n) => <li key={n.href}><a href={n.href}>{n.label}</a></li>)}
-                  <li><Link href="/bio">صفحة روابطي</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h5>حساباتي</h5>
-                <ul>
-                  {P.contact.links.filter((l) => l.url.startsWith("http")).map((l) => (
-                    <li key={l.label}><a href={l.url} target="_blank" rel="noopener">{l.label} ↗</a></li>
-                  ))}
-                  <li><a href={`mailto:${P.contact.email}`}>الإيميل</a></li>
-                </ul>
-              </div>
-            </div>
-            <div className="copy">
-              <span>© {new Date().getFullYear()} {P.name}</span>
-              <Link href="/admin">لوحة التحكم</Link>
-            </div>
+        <footer className="mini-foot">
+          <div className="container mini-foot-row">
+            <a href="#" className="mini-brand"><img src={logoAt(96)} alt="" width={28} height={28} /><span>{P.name}</span></a>
+            <nav className="mini-links" aria-label="حساباتي">
+              {P.contact.links.map((l) => (
+                <a key={l.label} href={l.url} {...(l.url.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>{l.label}</a>
+              ))}
+              <a href={`mailto:${P.contact.email}`}>الإيميل</a>
+            </nav>
+            <span className="mini-copy">© {new Date().getFullYear()} · <Link href="/admin">لوحة التحكم</Link></span>
           </div>
         </footer>
       </div>
