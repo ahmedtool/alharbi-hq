@@ -10,6 +10,15 @@ import "./portfolio.css";
 const P = PROFILE;
 const arNum = (n: number) => n.toLocaleString("ar-SA");
 
+const HERO_WORDS = ["الإجراءات اليومية", "المشاكل التشغيلية", "العمليات اليدوية", "الأفكار"];
+
+const HERO_FLOW = [
+  { t: "مشكلة تشغيلية", d: "موافقات متأخرة، ملفات متفرقة", icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg> },
+  { t: "تحليل العملية", d: "أرسم الإجراء وأحدد الهدر", icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="6" height="6" rx="1" /><rect x="15" y="15" width="6" height="6" rx="1" /><path d="M9 6h4a2 2 0 0 1 2 2v7" /></svg> },
+  { t: "أتمتة وذكاء اصطناعي", d: "أبني الحل بالبيانات والأدوات", icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" /><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" /></svg> },
+  { t: "منتج رقمي", d: "يشتغل ويخدم ناس حقيقيين", icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></svg> },
+];
+
 /** Splits text into words that slide up from behind a mask. */
 function MaskedWords({ text, baseDelay = 1 }: { text: string; baseDelay?: number }) {
   return (
@@ -212,6 +221,23 @@ const st = (i: number) => ({ className: "st", style: { ["--i" as string]: i } as
 export default function HomePage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const [wordIdx, setWordIdx] = useState(0);
+
+  // Rotating word in the hero line.
+  useEffect(() => {
+    const t = setInterval(() => setWordIdx((i) => (i + 1) % HERO_WORDS.length), 2600);
+    return () => clearInterval(t);
+  }, []);
+
+  // The dotted backdrop lights up around the pointer.
+  const onHeroMove = (e: React.PointerEvent<HTMLElement>) => {
+    const el = heroRef.current;
+    if (!el || e.pointerType !== "mouse") return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  };
   const [loaded, setLoaded] = useState(false);
   const [intro, setIntro] = useState<"hidden" | "play" | "lift">("hidden");
 
@@ -282,25 +308,49 @@ export default function HomePage() {
 
         <main id="main">
           {/* الواجهة */}
-          <section className="hero pf-hero">
-            <div className="container">
-              <div className="eyebrow name-en intro-anim" style={{ ["--d" as string]: 0 }}>{P.nameEn}</div>
-              <h1 className="hero-title"><MaskedWords text={P.name} /></h1>
-              <div className="pf-role intro-anim" style={{ ["--d" as string]: 5 }}>{P.role} <span aria-hidden="true">·</span> <span lang="en" dir="ltr">{P.roleEn}</span></div>
-              <div className="hero-sub intro-anim" style={{ ["--d" as string]: 7 }}>
-                <div>
-                  <p>{P.intro}</p>
-                  <p className="intro-en" lang="en" dir="ltr">{P.introEn}</p>
+          <section className="hero pf-hero hero-x" ref={heroRef} onPointerMove={onHeroMove}>
+            <div className="hero-bg" aria-hidden="true" />
+            <div className="container hero-grid">
+              <div className="hero-copy">
+                <div className="hero-top intro-anim" style={{ ["--d" as string]: 0 }}>
+                  <span className="eyebrow name-en" lang="en">{P.nameEn}</span>
+                  {P.available && <span className="avail-pill"><i /> متاح للتعاون</span>}
                 </div>
-                <div className="hero-cta">
+                <h1 className="hero-title"><MaskedWords text={P.name} /></h1>
+                <div className="pf-role intro-anim" style={{ ["--d" as string]: 5 }}>{P.role}<span className="role-en" lang="en" dir="ltr">{P.roleEn}</span></div>
+                <p className="hero-line intro-anim" style={{ ["--d" as string]: 7 }}>
+                  أحوّل{" "}
+                  <span className="rotator" aria-live="polite">
+                    <b key={wordIdx}>{HERO_WORDS[wordIdx]}</b>
+                  </span>
+                  <br />إلى حلول رقمية تشتغل.
+                </p>
+                <p className="intro-en intro-anim" lang="en" dir="ltr" style={{ ["--d" as string]: 8 }}>{P.introEn}</p>
+                <div className="hero-cta intro-anim" style={{ ["--d" as string]: 9 }}>
                   <a href="#work" className="btn btn-primary">وش أبني</a>
                   <a href="#contact" className="btn btn-ghost">تواصل معي</a>
                 </div>
               </div>
-              <div className="facts intro-anim" style={{ ["--d" as string]: 9 }}>
-                <span>{P.fullName}</span>
-                <span>📍 {P.city}</span>
-                {P.available && <span className="avail"><i /> متاح للتعاون</span>}
+
+              {/* From an operational problem to a working product, played as a loop. */}
+              <div className="flow-card intro-anim" style={{ ["--d" as string]: 6 }} aria-label="من المشكلة إلى المنتج">
+                <div className="flow-head"><span className="dots" aria-hidden="true"><i /><i /><i /></span><span>من المشكلة إلى المنتج</span></div>
+                <ol className="flow">
+                  {HERO_FLOW.map((f, i) => (
+                    <li key={f.t} style={{ ["--i" as string]: i }}>
+                      <span className="flow-ico" aria-hidden="true">{f.icon}</span>
+                      <div><b>{f.t}</b><small>{f.d}</small></div>
+                    </li>
+                  ))}
+                </ol>
+                <div className="flow-out">
+                  <span>منتجاتي</span>
+                  {P.projects.filter((p) => p.logo).map((p) => (
+                    <a key={p.titleEn} href={p.link || "#work"} {...(p.link ? { target: "_blank", rel: "noopener" } : {})}>
+                      <img src={p.logo} alt="" width={22} height={22} />{p.brand ?? p.title}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -459,7 +509,7 @@ export default function HomePage() {
               ))}
               <a href={`mailto:${P.contact.email}`}>الإيميل</a>
             </nav>
-            <span className="mini-copy">© {new Date().getFullYear()} · <Link href="/admin">لوحة التحكم</Link></span>
+            <span className="mini-copy">© {new Date().getFullYear()} {P.name}</span>
           </div>
         </footer>
       </div>

@@ -511,7 +511,7 @@ html:has(.pf) { scroll-behavior: smooth; }
   .pf .island-burger { display: grid; }
   .pf .island-wrap.compact .island-bar { max-width: 1120px; }
   .pf .island-wrap.compact .island-name { max-width: 140px; opacity: 1; }
-  .pf .island-sheet { display: grid; gap: 2px; max-width: 1120px; margin: 8px auto 0; padding: 10px; border-radius: 24px; border: 1px solid var(--line); background: var(--bg); background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 20px 50px -20px rgba(0,0,0,.35); transform-origin: top; opacity: 0; visibility: hidden; transform: translateY(-10px) scale(.97); transition: opacity .3s, transform .45s var(--ease), visibility .45s; }
+  .pf .island-sheet { position: absolute; top: 100%; inset-inline: 16px; display: grid; gap: 2px; max-width: 1120px; margin: 8px auto 0; padding: 10px; border-radius: 24px; border: 1px solid var(--line); background: var(--bg); background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 20px 50px -20px rgba(0,0,0,.35); transform-origin: top; opacity: 0; visibility: hidden; transform: translateY(-10px) scale(.97); transition: opacity .3s, transform .45s var(--ease), visibility .45s; }
   .pf .island-wrap.open .island-sheet { opacity: 1; visibility: visible; transform: none; }
   .pf .island-sheet a { padding: 12px 14px; border-radius: 14px; font-size: 1.25rem; font-weight: 700; opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .45s var(--ease), background .2s; }
   .pf .island-wrap.open .island-sheet a { opacity: 1; transform: none; transition-delay: calc(var(--i) * 45ms + 80ms); }
@@ -532,3 +532,50 @@ html:has(.pf) { scroll-behavior: smooth; }
 
 /* Island header on the public pages (links, request a project) */
 .pf.pf-island { position: sticky; top: 0; z-index: 50; min-height: 0; background: transparent; overflow: visible; }
+
+/* ============ Hero: copy + "problem → product" flow ============ */
+.pf .hero-x { position: relative; overflow: hidden; padding: 56px 0 64px; isolation: isolate; --mx: 75%; --my: 45%; }
+.pf .hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 0);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(460px circle at var(--mx) var(--my), #000, transparent 72%);
+  mask-image: radial-gradient(460px circle at var(--mx) var(--my), #000, transparent 72%); }
+.pf .hero-bg::after { content: ""; position: absolute; width: 520px; height: 520px; left: calc(var(--mx) - 260px); top: calc(var(--my) - 260px); border-radius: 50%; background: radial-gradient(circle, rgba(232,85,62,.14), transparent 65%); }
+.pf .hero-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+.pf .hero-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pf .avail-pill { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-size: .8rem; font-weight: 700; color: var(--ink-soft); }
+.pf .avail-pill i { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: live-dot 1.8s infinite; box-shadow: 0 0 0 0 rgba(34,197,94,.6); }
+.pf .hero-line { margin-top: 26px; font-size: clamp(1.35rem, 2.6vw, 1.9rem); font-weight: 700; line-height: 1.5; color: var(--ink); }
+.pf .rotator { display: inline-flex; vertical-align: bottom; overflow: hidden; padding: 0 10px; margin-inline: 2px; border-radius: 10px; background: var(--ink); color: var(--bg); }
+.pf .rotator b { display: inline-block; animation: word-in .6s var(--ease) both; }
+@keyframes word-in { from { opacity: 0; transform: translateY(70%); filter: blur(4px); } }
+.pf .hero-x .intro-en { margin-top: 10px; text-align: right; }
+.pf .hero-x .hero-cta { margin-top: 28px; }
+
+.pf .flow-card { position: relative; padding: 18px; border-radius: 20px; border: 1px solid var(--line); background: var(--bg); background: color-mix(in srgb, var(--bg) 85%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 30px 70px -30px rgba(0,0,0,.28); }
+.pf .flow-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 4px 14px; color: var(--muted); font-size: .82rem; font-weight: 700; }
+.pf .flow-head .dots { display: flex; gap: 5px; direction: ltr; }
+.pf .flow-head .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.pf .flow { --T: 7.2s; position: relative; list-style: none; display: grid; gap: 14px; }
+.pf .flow::before { content: ""; position: absolute; top: 22px; bottom: 22px; inset-inline-start: 21px; width: 2px; background: repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 11px); }
+.pf .flow::after { content: ""; position: absolute; inset-inline-start: 17px; width: 10px; height: 10px; border-radius: 50%; background: #e8553e; box-shadow: 0 0 0 4px rgba(232,85,62,.18), 0 0 14px rgba(232,85,62,.8); animation: flow-dot var(--T) cubic-bezier(.6,0,.4,1) infinite; }
+@keyframes flow-dot { 0% { top: 17px; opacity: 0; } 4% { opacity: 1; } 75% { top: calc(100% - 27px); opacity: 1; } 86%, 100% { top: calc(100% - 27px); opacity: 0; } }
+.pf .flow li { position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 10px 8px 8px; border-radius: 14px; transition: background .3s; }
+.pf .flow-ico { position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-inline-start: -8px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); animation: flow-node var(--T) ease infinite; animation-delay: calc(var(--i) * var(--T) * .25); }
+@keyframes flow-node { 0% { background: var(--ink); color: var(--bg); transform: scale(1.1); box-shadow: 0 0 0 6px color-mix(in srgb, var(--ink) 10%, transparent); } 14%, 100% { background: var(--bg); color: var(--ink); transform: none; box-shadow: none; } }
+.pf .flow li b { display: block; font-size: 1rem; }
+.pf .flow li small { display: block; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+.pf .flow-out { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); font-size: .8rem; color: var(--muted); font-weight: 700; }
+.pf .flow-out a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); transition: transform .3s var(--ease), border-color .2s; }
+.pf .flow-out a:hover { transform: translateY(-2px); border-color: var(--ink); }
+.pf .flow-out img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+@media (max-width: 960px) {
+  .pf .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .pf .hero-x { padding: 36px 0 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf .flow::after, .pf .flow-ico, .pf .avail-pill i { animation: none; }
+  .pf .rotator b { animation: none; }
+}
+.pf .pf-role .role-en { display: block; margin-top: 2px; font-size: .55em; font-weight: 600; letter-spacing: .02em; color: var(--muted); text-align: start; }
+.pf .pf-role .role-en { text-align: right; }
