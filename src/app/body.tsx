@@ -10,7 +10,7 @@ import useClient from '@/hooks/use-client';
 import { MobileTabBar } from '@/components/app/mobile-tab-bar';
 
 
-const publicPages = ['/admin', '/support/submit', '/bio'];
+const publicPages = ['/admin', '/support/submit', '/bio', '/cv'];
 // Signed-in pages that aren't part of the dashboard, so they get no bottom tab bar.
 const noTabBar = ['/login', '/verify-login', '/403', '/503'];
 

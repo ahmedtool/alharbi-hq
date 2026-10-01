@@ -288,8 +288,7 @@ export default function HomePage() {
     { href: "#work", label: "وش أبني" },
     { href: "#impact", label: "أرقامي" },
     { href: "#about", label: "نبذة" },
-    { href: "#experience", label: "خبراتي" },
-    { href: "#skills", label: "مهاراتي" },
+    { href: "/cv", label: "السيرة الذاتية" },
   ];
 
   return (
@@ -444,47 +443,29 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* الخبرات */}
-          <section id="experience" className="soft reveal">
-            <div className="container split">
-              <div className="split-head"><div className="eyebrow">٠٤</div><h2>الخبرات والتعليم</h2></div>
-              <ol className="timeline">
-                {P.experience.map((e, i) => (
-                  <li key={e.title} {...st(i)}>
-                    <span className="period">{e.period}</span>
-                    <div>
-                      <h3>{e.title}{e.place && <small> · {e.place}</small>}</h3>
-                      {e.points.length > 0 && <ul>{e.points.map((x, k) => <li key={x} {...st(k + 2)}>{x}</li>)}</ul>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-
-          {/* المهارات */}
-          <section id="skills" className="reveal">
+          {/* السيرة الذاتية (صفحة مستقلة) */}
+          <section id="cv" className="soft reveal">
             <div className="container">
-              <div className="sec-head"><div><div className="eyebrow">٠٥</div><h2>مهاراتي</h2></div></div>
-              <ul className="skill-rows">
-                {P.skills.map((g, i) => (
-                  <li key={g.group} className="st" style={{ ["--i" as string]: i }}>
-                    <span className="num">٠{arNum(i + 1)}</span>
-                    <h3>{g.group}</h3>
-                    <div className="skill-chips">{g.items.map((x) => <span key={x} className="chip">{x}</span>)}</div>
-                  </li>
-                ))}
-              </ul>
-              <p className="langs-line">
-                <b>اللغات:</b> {P.languages.map((l) => `${l.name} (${l.level})`).join(" · ")}
-              </p>
+              <Link href="/cv" className="cv-teaser">
+                <div className="cv-teaser-head">
+                  <div className="eyebrow">٠٤ · CV</div>
+                  <h2>السيرة الذاتية</h2>
+                  <p>خبرتي وتعليمي ومهاراتي في صفحة وحدة، وتقدر تحمّلها PDF.</p>
+                </div>
+                <ul className="cv-teaser-facts">
+                  <li><small>حاليًا</small><b>{P.experience[0].title}</b></li>
+                  <li><small>التعليم</small><b>{P.education[0].title}</b></li>
+                  <li><small>أبرز المهارات</small><b>{P.skills.slice(0, 3).map((g) => g.group).join(" · ")}</b></li>
+                </ul>
+                <span className="cv-teaser-go">عرض السيرة <i aria-hidden="true">←</i></span>
+              </Link>
             </div>
           </section>
 
           {/* التواصل */}
-          <section id="contact" className="soft reveal">
+          <section id="contact" className="reveal">
             <div className="container contact">
-              <div className="eyebrow">٠٦ · تواصل معي</div>
+              <div className="eyebrow">٠٥ · تواصل معي</div>
               <h2>عندك فكرة أو فرصة؟<br />خلنا نتكلم.</h2>
               <a className="contact-email" href={`mailto:${P.contact.email}`}>{P.contact.email}</a>
               <div className="contact-links">

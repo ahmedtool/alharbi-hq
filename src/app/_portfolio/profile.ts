@@ -107,7 +107,10 @@ export const PROFILE = {
         "موظف الشهر مرتين متتاليتين",
       ],
     },
-    { period: "", title: "بكالوريوس إدارة الأعمال", place: "الإدارة العامة", points: [] as string[] },
+  ],
+
+  education: [
+    { title: "بكالوريوس إدارة الأعمال", place: "تخصص الإدارة العامة" },
   ],
 
   skills: [
