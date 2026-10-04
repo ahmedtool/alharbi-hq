@@ -237,7 +237,7 @@ export function AppSidebar() {
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={isActive('/tools/invoice-generator')}>
-                              <Link href="/tools/invoice-generator" prefetch={true}><FileDigit /> اداة الفاتورة</Link>
+                              <Link href="/tools/invoice-generator" prefetch={true}><FileDigit /> إنشاء فاتورة</Link>
                           </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>

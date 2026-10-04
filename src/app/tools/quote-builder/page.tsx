@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Field } from "@/components/app/form-bits";
-import { Briefcase, Download, FileSignature, FileText, FolderOpen, Loader2, Mail, PlusCircle, Save, Send, Trash2 } from "lucide-react";
+import { Briefcase, Download, FileDigit, FileSignature, FileText, FolderOpen, Loader2, Mail, PlusCircle, Save, Send, Trash2 } from "lucide-react";
 import { sendContractEmail } from "../contract-builder/actions";
 import { getAccessToken } from "@/lib/auth";
 import { logoAt } from "@/lib/brand";
@@ -299,12 +299,12 @@ export default function QuoteBuilderPage() {
     }
   };
 
-  /** Accepted? Save it and open the contract builder filled from this quote. */
-  const toContract = async () => {
+  /** Accepted? Save it and open the contract or invoice tool filled from this quote. */
+  const toNext = async (to: "contract" | "invoice") => {
     try {
       const id = await persist({ ...q, status: "accepted" });
       setQ((cur) => ({ ...cur, status: "accepted" }));
-      router.push(`/tools/contract-builder?quote=${id}`);
+      router.push(to === "contract" ? `/tools/contract-builder?quote=${id}` : `/tools/invoice-generator?quote=${id}`);
     } catch (e) {
       console.error(e);
       toast({ variant: "destructive", title: "ما قدرنا نحفظ العرض" });
@@ -456,7 +456,10 @@ export default function QuoteBuilderPage() {
             </div>
           </Card>
 
-          <Button className="w-full" variant="secondary" onClick={toContract}><FileSignature className="me-2 h-4 w-4" /> العميل وافق؟ حوّله لعقد</Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={() => toNext("contract")}><FileSignature className="me-2 h-4 w-4" /> حوّله لعقد</Button>
+            <Button variant="secondary" onClick={() => toNext("invoice")}><FileDigit className="me-2 h-4 w-4" /> أصدر فاتورة</Button>
+          </div>
         </div>
 
         <div className="contract-col min-w-0">
