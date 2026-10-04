@@ -18,16 +18,9 @@ import { format, parseISO, intervalToDuration } from 'date-fns';
 import { ar } from "date-fns/locale";
 import Link from 'next/link';
 
-interface Project {
-    id: string;
-    name: string;
-    description: string;
-    budget: number;
-    startDate: string;
-    endDate: string;
-    progress: number;
-    clientName?: string;
-}
+import { kindOf, stageOf, daysUntil, deadlineText, sar, CLIENT_STAGES, type Project } from '../model';
+import { cn } from '@/lib/utils';
+import { ExternalLink, Rocket, Target } from 'lucide-react';
 
 interface Invoice {
     id: string;
@@ -196,64 +189,9 @@ export default function ProjectDetailPage() {
                 </Button>
             </PageHeader>
             <div className="space-y-8">
-                 <section>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
-                                <TrendingUp className="h-4 w-4 text-green-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat('ar-SA').format(totalIncome)} <span className="saudi-riyal">&#xea;</span></div>
-                                <p className="text-xs text-muted-foreground">من الفواتير المدفوعة</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
-                                <TrendingDown className="h-4 w-4 text-destructive" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat('ar-SA').format(totalExpenses)} <span className="saudi-riyal">&#xea;</span></div>
-                                <p className="text-xs text-muted-foreground">التكاليف المرتبطة بالمشروع</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">صافي الربح</CardTitle>
-                                <Pocket className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold" dir="ltr">{new Intl.NumberFormat('ar-SA').format(netProfit)} <span className="saudi-riyal">&#xea;</span></div>
-                                <p className="text-xs text-muted-foreground">الدخل - المصاريف</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">مدة المشروع</CardTitle>
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{projectDuration}</div>
-                                <p className="text-xs text-muted-foreground">من البداية إلى النهاية</p>
-                            </CardContent>
-                        </Card>
-                        {project.clientName && (
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">العميل</CardTitle>
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{project.clientName}</div>
-                                    <p className="text-xs text-muted-foreground">العميل المسؤول عن المشروع</p>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                </section>
-                <div className="grid lg:grid-cols-2 gap-8">
-                     <Card>
+                <ProjectOverview project={project} totalIncome={totalIncome} totalExpenses={totalExpenses} netProfit={netProfit} duration={projectDuration} />
+                <div className={cn("grid gap-8", kindOf(project) === "client" && "lg:grid-cols-2")}>
+                     {kindOf(project) === "client" && <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <FileText className="h-5 w-5"/>
@@ -290,7 +228,7 @@ export default function ProjectDetailPage() {
                                </TableBody>
                            </Table>
                         </CardContent>
-                    </Card>
+                    </Card>}
 
                     <Card>
                         <CardHeader>
@@ -331,5 +269,75 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+
+/** Top of the project page: different figures for personal and client projects. */
+function ProjectOverview({ project, totalIncome, totalExpenses, netProfit, duration }: {
+    project: Project; totalIncome: number; totalExpenses: number; netProfit: number; duration: string;
+}) {
+    const kind = kindOf(project);
+    const stage = stageOf(project);
+    const delivered = kind === "client" && stage === CLIENT_STAGES.delivered;
+    const due = delivered ? null : deadlineText(daysUntil(project.endDate));
+    const Riyal = () => <span className="saudi-riyal">&#xea;</span>;
+    const tiles: { label: string; value: React.ReactNode; hint?: string; tone?: string }[] = kind === "client"
+        ? [
+            { label: "قيمة العقد", value: <>{sar(project.budget)} <Riyal /></> },
+            { label: "المستلم", value: <>{sar(project.amountPaid ?? 0)} <Riyal /></>, hint: project.budget ? `${sar(((project.amountPaid ?? 0) / project.budget) * 100)}٪ من العقد` : undefined },
+            { label: "المتبقي", value: <>{sar(Math.max(0, project.budget - (project.amountPaid ?? 0)))} <Riyal /></>, tone: project.budget - (project.amountPaid ?? 0) > 0 ? "text-amber-600" : "text-emerald-600" },
+            { label: "موعد التسليم", value: project.endDate ? format(parseISO(project.endDate), "d MMMM", { locale: ar }) : "غير محدد", hint: due?.text, tone: due?.late ? "text-destructive" : undefined },
+          ]
+        : [
+            { label: "التكلفة المتوقعة", value: <>{sar(project.budget)} <Riyal /></> },
+            { label: "المصروف فعليًا", value: <>{sar(totalExpenses)} <Riyal /></>, hint: "من المعاملات اللي فيها اسم المشروع" },
+            { label: "الدخل", value: <>{sar(totalIncome)} <Riyal /></>, hint: `صافي: ${sar(netProfit)}` },
+            { label: "موعد الإطلاق", value: project.endDate ? format(parseISO(project.endDate), "d MMMM", { locale: ar }) : "غير محدد", hint: due?.text ?? duration },
+          ];
+
+    return (
+        <section className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold">
+                    {kind === "client" ? <Briefcase className="h-4 w-4" /> : <Rocket className="h-4 w-4" />}
+                    {kind === "client" ? "مشروع لعميل" : (project.category || "مشروع شخصي")}
+                </span>
+                <span className={cn("rounded-full px-3 py-1 text-sm font-bold", stage.tone)}>{stage.label}</span>
+                {kind === "client" && project.clientName && (
+                    <Link href="/clients" className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm hover:border-foreground">
+                        <Users className="h-4 w-4" /> {project.clientName}
+                    </Link>
+                )}
+                {project.link && (
+                    <a href={project.link} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm hover:border-foreground" dir="ltr">
+                        <ExternalLink className="h-4 w-4" /> {project.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                    </a>
+                )}
+            </div>
+
+            {kind === "personal" && project.goal && (
+                <div className="flex items-start gap-3 rounded-2xl border bg-muted/50 p-4">
+                    <Target className="mt-0.5 h-5 w-5 shrink-0" />
+                    <div><p className="text-xs text-muted-foreground">الهدف</p><p className="font-semibold">{project.goal}</p></div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {tiles.map((t) => (
+                    <div key={t.label} className="rounded-2xl border bg-card p-4">
+                        <p className="text-xs text-muted-foreground">{t.label}</p>
+                        <p className={cn("mt-1 text-xl font-bold md:text-2xl", t.tone)}>{t.value}</p>
+                        {t.hint && <p className={cn("mt-1 text-xs text-muted-foreground", t.tone)}>{t.hint}</p>}
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border bg-card p-4">
+                <span className="text-sm font-semibold">الإنجاز</span>
+                <Progress value={Number(project.progress || 0)} className="flex-1" />
+                <span className="text-sm font-bold tabular-nums">{sar(project.progress || 0)}٪</span>
+            </div>
+        </section>
     );
 }

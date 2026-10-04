@@ -1,447 +1,478 @@
-
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/db";
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp } from "@/lib/db";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, PlusCircle, MoreHorizontal, Eye, Globe } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
-import { ar } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import { Slider } from "@/components/ui/slider";
-import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { ArrowRight, Briefcase, ExternalLink, MoreHorizontal, PlusCircle, Rocket, Target, UserPlus } from "lucide-react";
+import {
+  CLIENT_STAGES, PERSONAL_CATEGORIES, PERSONAL_STAGES, daysUntil, deadlineText, kindOf, sar, stageOf,
+  type ClientStage, type PersonalStage, type Project, type ProjectKind,
+} from "./model";
 
+interface Client { id: string; name: string; phone?: string; email?: string }
 
-interface Project {
-    id: string;
-    name: string;
-    description: string;
-    budget: number;
-    startDate: string;
-    endDate: string;
-    progress: number;
-    clientId?: string;
-    clientName?: string;
-    isPublic: boolean;
+const toDateInput = (iso?: string) => (iso ? iso.slice(0, 10) : "");
+const fromDateInput = (v: string) => (v ? new Date(v + "T00:00:00").toISOString() : "");
+
+/* Step 1: what kind of project ------------------------------------------- */
+function KindPicker({ onPick }: { onPick: (k: ProjectKind) => void }) {
+  const options: { kind: ProjectKind; icon: React.ElementType; title: string; text: string; points: string[] }[] = [
+    {
+      kind: "personal", icon: Rocket, title: "مشروع شخصي",
+      text: "فكرة أو منتج تبنيه لنفسك.",
+      points: ["المرحلة: فكرة ← بناء ← إطلاق", "الهدف والرابط", "التكلفة"],
+    },
+    {
+      kind: "client", icon: Briefcase, title: "مشروع لعميل",
+      text: "شغل مدفوع لعميل بعقد ومستحقات.",
+      points: ["العميل وقيمة العقد", "المبلغ المستلم والمتبقي", "موعد التسليم"],
+    },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {options.map(({ kind, icon: Icon, title, text, points }) => (
+        <button
+          key={kind}
+          type="button"
+          onClick={() => onPick(kind)}
+          className="group text-start rounded-2xl border p-5 transition-all hover:border-foreground hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-muted transition-colors group-hover:bg-foreground group-hover:text-background">
+            <Icon className="h-6 w-6" />
+          </span>
+          <b className="block text-lg">{title}</b>
+          <span className="block text-sm text-muted-foreground">{text}</span>
+          <ul className="mt-3 space-y-1 text-sm">
+            {points.map((p) => <li key={p} className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-foreground/50" />{p}</li>)}
+          </ul>
+        </button>
+      ))}
+    </div>
+  );
 }
 
-interface Client {
-    id: string;
-    name: string;
+/** Segmented control for the stage. */
+function StagePicker<T extends string>({ value, onChange, stages }: { value: T; onChange: (v: T) => void; stages: Record<T, { label: string }> }) {
+  return (
+    <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-muted p-1 sm:grid-cols-4">
+      {(Object.keys(stages) as T[]).map((k) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => onChange(k)}
+          className={cn(
+            "rounded-lg px-2 py-2 text-sm font-semibold transition-colors",
+            value === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {stages[k].label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
-const ProjectForm = ({ 
-    project,
-    clients, 
-    onSave, 
-    onClose 
-}: { 
-    project?: Project | null,
-    clients: Client[], 
-    onSave: () => void, 
-    onClose: () => void 
-}) => {
+const Field = ({ label, hint, children, className }: { label: string; hint?: string; children: React.ReactNode; className?: string }) => (
+  <div className={cn("space-y-1.5", className)}>
+    <Label className="font-semibold">{label}</Label>
+    {children}
+    {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+  </div>
+);
+
+const Money = ({ value, onChange, id }: { value: number; onChange: (n: number) => void; id: string }) => (
+  <div className="relative">
+    <Input id={id} type="number" inputMode="decimal" min={0} value={value || ""} placeholder="0" onChange={(e) => onChange(Number(e.target.value))} className="pl-8" />
+    <span className="saudi-riyal absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">&#xea;</span>
+  </div>
+);
+
+/* Step 2: the form for that kind ----------------------------------------- */
+function ProjectForm({
+  project, clients, onSaved, onClose,
+}: { project: Project | null; clients: Client[]; onSaved: () => void; onClose: () => void }) {
   const { toast } = useToast();
-  const [name, setName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [budget, setBudget] = React.useState(0);
-  const [startDate, setStartDate] = React.useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
-  const [progress, setProgress] = React.useState(0);
-  const [clientId, setClientId] = React.useState<string | undefined>(undefined);
-  const [isPublic, setIsPublic] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [kind, setKind] = React.useState<ProjectKind | null>(project ? kindOf(project) : null);
+  const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
-    if (project) {
-        setName(project.name || "");
-        setDescription(project.description || "");
-        setBudget(project.budget || 0);
-        setStartDate(project.startDate ? parseISO(project.startDate) : undefined);
-        setEndDate(project.endDate ? parseISO(project.endDate) : undefined);
-        setProgress(project.progress || 0);
-        setClientId(project.clientId || undefined);
-        setIsPublic(project.isPublic || false);
-    } else {
-        setName("");
-        setDescription("");
-        setBudget(0);
-        setStartDate(new Date());
-        setEndDate(undefined);
-        setProgress(0);
-        setClientId(undefined);
-        setIsPublic(false);
+  // shared
+  const [name, setName] = React.useState(project?.name ?? "");
+  const [description, setDescription] = React.useState(project?.description ?? "");
+  const [startDate, setStartDate] = React.useState(toDateInput(project?.startDate) || toDateInput(new Date().toISOString()));
+  const [endDate, setEndDate] = React.useState(toDateInput(project?.endDate));
+  const [progress, setProgress] = React.useState(project?.progress ?? 0);
+  const [budget, setBudget] = React.useState(project?.budget ?? 0);
+  const [link, setLink] = React.useState(project?.link ?? "");
+  // personal
+  const [personalStage, setPersonalStage] = React.useState<PersonalStage>(
+    project && kindOf(project) === "personal" && (project.stage as PersonalStage) in PERSONAL_STAGES ? (project.stage as PersonalStage) : "idea"
+  );
+  const [goal, setGoal] = React.useState(project?.goal ?? "");
+  const [category, setCategory] = React.useState(project?.category ?? PERSONAL_CATEGORIES[0]);
+  // client
+  const [clientStage, setClientStage] = React.useState<ClientStage>(
+    project && kindOf(project) === "client" && (project.stage as ClientStage) in CLIENT_STAGES ? (project.stage as ClientStage) : "active"
+  );
+  const [clientId, setClientId] = React.useState<string>(project?.clientId ?? "");
+  const [newClient, setNewClient] = React.useState(false);
+  const [newClientName, setNewClientName] = React.useState("");
+  const [newClientPhone, setNewClientPhone] = React.useState("");
+  const [amountPaid, setAmountPaid] = React.useState(project?.amountPaid ?? 0);
+
+  const remaining = Math.max(0, budget - amountPaid);
+
+  const save = async () => {
+    if (!kind) return;
+    if (!name.trim()) return toast({ variant: "destructive", title: "اكتب اسم المشروع" });
+    if (kind === "client" && !clientId && !(newClient && newClientName.trim())) {
+      return toast({ variant: "destructive", title: "اختر العميل أو أضف عميل جديد" });
     }
-  }, [project]);
-
-
-  const handleSubmit = async () => {
-    if (!name || !startDate || !endDate) {
-        toast({
-            variant: "destructive",
-            title: "خطأ",
-            description: "الرجاء تعبئة جميع الحقول المطلوبة.",
-        });
-        return;
-    }
-    setIsLoading(true);
+    setSaving(true);
     try {
-        const selectedClient = clients.find(c => c.id === clientId);
-        const projectData = {
-            name,
-            description,
-            budget: Number(budget),
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            progress: Number(progress),
-            clientId: selectedClient?.id || null,
-            clientName: selectedClient?.name || null,
-            isPublic: isPublic,
-        };
+      let cId = clientId;
+      let cName = clients.find((c) => c.id === clientId)?.name ?? null;
+      if (kind === "client" && newClient) {
+        const ref = await addDoc(collection(db, "clients"), { name: newClientName.trim(), phone: newClientPhone.trim(), email: "", company: "", notes: "" });
+        cId = ref.id;
+        cName = newClientName.trim();
+      }
+      const base = {
+        kind, name: name.trim(), description: description.trim(),
+        startDate: fromDateInput(startDate), endDate: fromDateInput(endDate),
+        progress: Number(progress), budget: Number(budget) || 0, link: link.trim(),
+      };
+      const data = kind === "personal"
+        ? { ...base, stage: personalStage, goal: goal.trim(), category, clientId: null, clientName: null, amountPaid: 0 }
+        : { ...base, stage: clientStage, clientId: cId || null, clientName: cName, amountPaid: Number(amountPaid) || 0 };
 
-        if (project) {
-            const projectRef = doc(db, "projects", project.id);
-            await updateDoc(projectRef, projectData);
-            toast({ title: "تم تحديث المشروع بنجاح!" });
-
-        } else {
-            await addDoc(collection(db, "projects"), projectData);
-            toast({ title: "تم إنشاء المشروع بنجاح!" });
-        }
-        onSave();
-        onClose();
-    } catch (error) {
-        console.error("Error saving project: ", error);
-        toast({
-            variant: "destructive",
-            title: "حدث خطأ",
-            description: "لم نتمكن من حفظ المشروع. الرجاء المحاولة مرة أخرى.",
-        });
+      if (project) await updateDoc(doc(db, "projects", project.id), data);
+      else await addDoc(collection(db, "projects"), data);
+      toast({ title: project ? "تم تحديث المشروع" : "تم إنشاء المشروع" });
+      onSaved();
+    } catch (e) {
+      console.error("Error saving project", e);
+      toast({ variant: "destructive", title: "ما قدرنا نحفظ المشروع، جرّب مرة ثانية" });
     } finally {
-        setIsLoading(false);
+      setSaving(false);
     }
   };
 
-  return (
-    <DialogContent className="sm:max-w-md">
+  if (!kind) {
+    return (
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-            <DialogTitle>{project ? "تعديل مشروع" : "إنشاء مشروع جديد"}</DialogTitle>
-            <DialogDescription>
-                عبّي تفاصيل مشروعك تحت. اضغط على "حفظ" لما تخلص.
-            </DialogDescription>
+          <DialogTitle>مشروع جديد</DialogTitle>
+          <DialogDescription>وش نوع المشروع؟ كل نوع له تفاصيل مختلفة.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4 text-right">
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-                اسم المشروع
-            </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="client" className="text-right">
-                    العميل
-                </Label>
-                <Select value={clientId} onValueChange={setClientId}>
-                    <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="اختر العميل (اختياري)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">بدون عميل</SelectItem>
-                        {clients.map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="description" className="text-right pt-2">
-                الوصف
-            </Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" rows={3}/>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="budget" className="text-right">
-                الميزانية (ر.س)
-            </Label>
-            <div className="col-span-3 relative">
-                <Input id="budget" type="number" value={budget} onChange={(e) => setBudget(Number(e.target.value))} className="pl-7" />
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 saudi-riyal">&#xea;</span>
-            </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">فترة المشروع</Label>
-            <div className="col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant={"outline"}
-                        className={cn("justify-start text-right font-normal", !startDate && "text-muted-foreground")}
-                        >
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                        {startDate ? format(startDate, "PPP", { locale: ar }) : <span>تاريخ البداية</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus locale={ar}/>
-                    </PopoverContent>
-                </Popover>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                        variant={"outline"}
-                        className={cn("justify-start text-right font-normal", !endDate && "text-muted-foreground")}
-                        >
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                        {endDate ? format(endDate, "PPP", { locale: ar }) : <span>تاريخ النهاية</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus locale={ar} />
-                    </PopoverContent>
-                </Popover>
-            </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="progress" className="text-right">
-                نسبة الإنجاز
-            </Label>
-            <div className="col-span-3 flex items-center gap-2">
-                <Slider
-                    id="progress"
-                    min={0}
-                    max={100}
-                    step={5}
-                    value={[progress]}
-                    onValueChange={(value) => setProgress(value[0])}
-                    className="w-[80%]"
-                />
-                <span className="text-sm font-medium w-[20%] text-left">{new Intl.NumberFormat('ar-SA').format(Number(progress || 0))}%</span>
-            </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="is-public" className="text-right">
-                    الظهور
-                </Label>
-                <div className="col-span-3 flex items-center space-x-2 space-x-reverse">
-                    <Checkbox id="is-public" checked={isPublic} onCheckedChange={(checked) => setIsPublic(Boolean(checked))} />
-                    <label
-                        htmlFor="is-public"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                        عرض المشروع في الموقع العام
-                    </label>
-                </div>
-            </div>
+        <KindPicker onPick={setKind} />
+      </DialogContent>
+    );
+  }
+
+  const isClient = kind === "client";
+  return (
+    <DialogContent className="sm:max-w-2xl">
+      <DialogHeader>
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-foreground text-background">
+            {isClient ? <Briefcase className="h-5 w-5" /> : <Rocket className="h-5 w-5" />}
+          </span>
+          <div className="text-start">
+            <DialogTitle>{project ? "تعديل " : ""}{isClient ? "مشروع لعميل" : "مشروع شخصي"}</DialogTitle>
+            <DialogDescription>{isClient ? "العميل، العقد، والمستحقات." : "الفكرة، الهدف، ووين وصلت."}</DialogDescription>
+          </div>
         </div>
-        <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
-            <Button type="submit" onClick={handleSubmit} disabled={isLoading}>{isLoading ? "جاري الحفظ..." : "حفظ المشروع"}</Button>
-        </DialogFooter>
+      </DialogHeader>
+
+      <div className="space-y-5 py-2">
+        {isClient ? (
+          <>
+            <Field label="العميل">
+              {!newClient ? (
+                <div className="flex gap-2">
+                  <Select value={clientId} onValueChange={setClientId}>
+                    <SelectTrigger className="flex-1"><SelectValue placeholder="اختر العميل" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" onClick={() => { setNewClient(true); setClientId(""); }}>
+                    <UserPlus className="me-2 h-4 w-4" /> جديد
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-2 rounded-xl border border-dashed p-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <Input placeholder="اسم العميل" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                  <Input placeholder="الجوال (اختياري)" type="tel" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
+                  <Button type="button" variant="ghost" onClick={() => setNewClient(false)}>من القائمة</Button>
+                </div>
+              )}
+            </Field>
+            <Field label="اسم المشروع"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلًا: متجر إلكتروني لمطعم" /></Field>
+            <Field label="نطاق العمل" hint="وش متفقين عليه بالضبط؟ يفيدك وقت المراجعة والتسليم.">
+              <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </Field>
+            <Field label="المرحلة"><StagePicker value={clientStage} onChange={setClientStage} stages={CLIENT_STAGES} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="قيمة العقد"><Money id="budget" value={budget} onChange={setBudget} /></Field>
+              <Field label="المستلم حتى الآن" hint={budget > 0 ? `المتبقي: ${sar(remaining)} ر.س` : undefined}>
+                <Money id="paid" value={amountPaid} onChange={setAmountPaid} />
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="تاريخ البداية"><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></Field>
+              <Field label="موعد التسليم"><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></Field>
+            </div>
+            <Field label="رابط التسليم (اختياري)" hint="رابط النسخة التجريبية أو ملفات التسليم.">
+              <Input type="url" dir="ltr" placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="اسم المشروع"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلًا: مرشح" /></Field>
+            <Field label="الفكرة باختصار"><Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+            <Field label="الهدف" hint="وش يعني النجاح لهالمشروع؟ مثلًا: ١٠ مطاعم مشتركة قبل نهاية السنة.">
+              <div className="relative">
+                <Target className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pr-10" value={goal} onChange={(e) => setGoal(e.target.value)} />
+              </div>
+            </Field>
+            <Field label="المرحلة"><StagePicker value={personalStage} onChange={setPersonalStage} stages={PERSONAL_STAGES} /></Field>
+            <Field label="النوع">
+              <div className="flex flex-wrap gap-2">
+                {PERSONAL_CATEGORIES.map((c) => (
+                  <button key={c} type="button" onClick={() => setCategory(c)}
+                    className={cn("rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors", category === c ? "border-foreground bg-foreground text-background" : "hover:border-foreground")}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="تاريخ البداية"><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></Field>
+              <Field label="موعد الإطلاق المستهدف (اختياري)"><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="رابط المشروع (اختياري)"><Input type="url" dir="ltr" placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} /></Field>
+              <Field label="التكلفة المتوقعة (اختياري)"><Money id="cost" value={budget} onChange={setBudget} /></Field>
+            </div>
+          </>
+        )}
+
+        <Field label={`نسبة الإنجاز: ${sar(progress)}٪`}>
+          <Slider min={0} max={100} step={5} value={[progress]} onValueChange={(v) => setProgress(v[0])} />
+        </Field>
+      </div>
+
+      <DialogFooter className="gap-2 sm:justify-between">
+        {!project ? (
+          <Button type="button" variant="ghost" onClick={() => setKind(null)}><ArrowRight className="me-2 h-4 w-4" /> تغيير النوع</Button>
+        ) : <span />}
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button type="button" onClick={save} disabled={saving}>{saving ? "جاري الحفظ..." : "حفظ المشروع"}</Button>
+        </div>
+      </DialogFooter>
     </DialogContent>
   );
-};
+}
 
+/* Cards ------------------------------------------------------------------- */
+function ProjectCard({ project, onEdit, onDelete }: { project: Project; onEdit: () => void; onDelete: () => void }) {
+  const router = useRouter();
+  const kind = kindOf(project);
+  const stage = stageOf(project);
+  const delivered = kind === "client" && stage === CLIENT_STAGES.delivered;
+  const due = delivered ? null : deadlineText(daysUntil(project.endDate));
+  const paidPct = project.budget > 0 ? Math.min(100, ((project.amountPaid ?? 0) / project.budget) * 100) : 0;
+
+  return (
+    <article
+      onClick={() => router.push(`/projects/${project.id}`)}
+      className="group flex cursor-pointer flex-col gap-4 rounded-2xl border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-foreground/40 hover:shadow-lg"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted">
+            {kind === "client" ? <Briefcase className="h-5 w-5" /> : <Rocket className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-lg font-bold">{project.name}</h3>
+            <p className="truncate text-xs text-muted-foreground">
+              {kind === "client" ? (project.clientName || "بدون عميل") : (project.category || "مشروع شخصي")}
+            </p>
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">خيارات</span><MoreHorizontal className="h-4 w-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={onEdit}>تعديل</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="text-destructive">حذف</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", stage.tone)}>{stage.label}</span>
+        {due && (
+          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", due.late ? "border-destructive/40 text-destructive" : "text-muted-foreground")}>{due.text}</span>
+        )}
+      </div>
+
+      {kind === "client" ? (
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="text-muted-foreground">المستلم</span>
+            <span dir="ltr" className="font-bold">{sar(project.amountPaid ?? 0)} / {sar(project.budget)} <span className="saudi-riyal">&#xea;</span></span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${paidPct}%` }} /></div>
+        </div>
+      ) : (
+        <p className="line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">
+          {project.goal ? <><Target className="me-1 inline h-3.5 w-3.5" />{project.goal}</> : (project.description || "بدون وصف")}
+        </p>
+      )}
+
+      <div className="mt-auto flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-foreground" style={{ width: `${project.progress || 0}%` }} /></div>
+        <span className="text-xs font-bold tabular-nums">{sar(project.progress || 0)}٪</span>
+        {project.link && (
+          <a href={project.link} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground" title="فتح الرابط">
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/* Page -------------------------------------------------------------------- */
+type Filter = "all" | ProjectKind;
 
 export default function ProjectsPage() {
   const { toast } = useToast();
-  const router = useRouter();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [clients, setClients] = React.useState<Client[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<Project | null>(null);
+  const [filter, setFilter] = React.useState<Filter>("all");
 
-  const fetchData = React.useCallback(async () => {
-    setIsLoading(true);
+  const load = React.useCallback(async () => {
+    setLoading(true);
     try {
-        const projectsSnapshot = await getDocs(collection(db, "projects"));
-        const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-        setProjects(projectsData);
-
-        const clientsSnapshot = await getDocs(collection(db, "clients"));
-        const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
-        setClients(clientsData);
-    } catch (error) {
-        console.error("Error fetching data: ", error);
-        toast({
-            variant: "destructive",
-            title: "حدث خطأ أثناء جلب البيانات.",
-        });
+      const [ps, cs] = await Promise.all([getDocs(collection(db, "projects")), getDocs(collection(db, "clients"))]);
+      setProjects(ps.docs.map((d) => ({ id: d.id, ...d.data() } as Project)));
+      setClients(cs.docs.map((d) => ({ id: d.id, ...d.data() } as Client)));
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "حدث خطأ أثناء جلب البيانات." });
     } finally {
-        setIsLoading(false);
+      setLoading(false);
     }
   }, [toast]);
 
-  React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  React.useEffect(() => { load(); }, [load]);
 
-  const handleEdit = (project: Project) => {
-    setSelectedProject(project);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (project: Project) => {
-    if (!window.confirm("هل أنت متأكد أنك تريد حذف هذا المشروع؟")) return;
+  const remove = async (p: Project) => {
+    if (!window.confirm(`حذف «${p.name}»؟`)) return;
     try {
-        await deleteDoc(doc(db, "projects", project.id));
-        toast({ title: "تم حذف المشروع بنجاح" });
-        fetchData();
-    } catch (error) {
-        console.error("Error deleting project: ", error);
-        toast({
-            variant: "destructive",
-            title: "حدث خطأ أثناء حذف المشروع.",
-        });
+      await deleteDoc(doc(db, "projects", p.id));
+      toast({ title: "تم حذف المشروع" });
+      load();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نحذف المشروع" });
     }
   };
-  
-  const handleOpenDialog = () => {
-      setSelectedProject(null);
-      setIsDialogOpen(true);
-  }
 
+  const personal = projects.filter((p) => kindOf(p) === "personal");
+  const client = projects.filter((p) => kindOf(p) === "client");
+  const shown = filter === "all" ? projects : filter === "client" ? client : personal;
+
+  const contractTotal = client.reduce((s, p) => s + (p.budget || 0), 0);
+  const received = client.reduce((s, p) => s + (p.amountPaid || 0), 0);
+  const activeClient = client.filter((p) => stageOf(p) !== CLIENT_STAGES.delivered).length;
+  const building = personal.filter((p) => stageOf(p) === PERSONAL_STAGES.building).length;
+
+  const tabs: { key: Filter; label: string; count: number }[] = [
+    { key: "all", label: "الكل", count: projects.length },
+    { key: "client", label: "لعملاء", count: client.length },
+    { key: "personal", label: "شخصية", count: personal.length },
+  ];
+  const openNew = () => { setEditing(null); setOpen(true); };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 text-right">
-      <PageHeader
-        title="المشاريع"
-        description="نظم وتابع مشاريعك الشغالة."
-      >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenDialog}>
-              <PlusCircle className="ml-2 h-4 w-4" />
-              مشروع جديد
-            </Button>
-          </DialogTrigger>
-          <ProjectForm 
-            project={selectedProject}
-            clients={clients} 
-            onSave={() => {
-                fetchData();
-                setIsDialogOpen(false);
-            }}
-            onClose={() => setIsDialogOpen(false)}
-            />
-        </Dialog>
+      <PageHeader title="المشاريع" description="مشاريعك الشخصية وشغلك للعملاء، كل نوع بتفاصيله.">
+        <Button onClick={openNew}><PlusCircle className="me-2 h-4 w-4" /> مشروع جديد</Button>
       </PageHeader>
-      
-      {isLoading ? (
-         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-             {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i}>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-10 w-full" />
-                    </CardContent>
-                    <CardFooter>
-                         <Skeleton className="h-8 w-1/4" />
-                    </CardFooter>
-                </Card>
-             ))}
-         </div>
-      ) : projects.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-                <Card 
-                    key={project.id} 
-                    className="flex flex-col hover:border-foreground/40 transition-shadow cursor-pointer"
-                    onClick={() => router.push(`/projects/${project.id}`)}
-                >
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                             <CardTitle className="mb-2">{project.name}</CardTitle>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">فتح القائمة</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                    <DropdownMenuItem onClick={() => handleEdit(project)}>تعديل</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDelete(project)} className="text-destructive">حذف</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                        <CardDescription className="line-clamp-2 h-10">{project.description || "لا يوجد وصف"}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 flex-grow">
-                         <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-muted-foreground">نسبة الإنجاز</span>
-                                <span className="text-sm font-bold">{new Intl.NumberFormat('ar-SA').format(Number(project.progress || 0))}%</span>
-                            </div>
-                            <Progress value={Number(project.progress || 0)} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground" dir="ltr">{format(parseISO(project.startDate), "d LLL, y", { locale: ar })} - {format(parseISO(project.endDate), "d LLL, y", { locale: ar })}</p>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                        <span className="font-bold text-lg" dir="ltr">{new Intl.NumberFormat('ar-SA').format(Number(project.budget || 0))} <span className="saudi-riyal">&#xea;</span></span>
-                        <div className='flex items-center gap-2'>
-                          {project.isPublic && <span title="مشروع عام"><Globe className="h-4 w-4 text-sky-500" aria-label="مشروع عام"/></span>}
-                          {project.clientName && <span className="text-sm text-muted-foreground">العميل: {project.clientName}</span>}
-                        </div>
-                    </CardFooter>
-                </Card>
-            ))}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        {open && (
+          <ProjectForm
+            key={editing?.id ?? "new"}
+            project={editing}
+            clients={clients}
+            onSaved={() => { setOpen(false); load(); }}
+            onClose={() => setOpen(false)}
+          />
+        )}
+      </Dialog>
+
+      <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+        {[
+          { label: "قيمة عقود العملاء", value: <>{sar(contractTotal)} <span className="saudi-riyal">&#xea;</span></> },
+          { label: "المتبقي عند العملاء", value: <>{sar(Math.max(0, contractTotal - received))} <span className="saudi-riyal">&#xea;</span></> },
+          { label: "مشاريع عملاء جارية", value: sar(activeClient) },
+          { label: "مشاريع شخصية قيد البناء", value: sar(building) },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border bg-card p-4">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="mt-1 text-xl font-bold md:text-2xl">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-5 inline-flex rounded-xl bg-muted p-1">
+        {tabs.map((t) => (
+          <button key={t.key} type="button" onClick={() => setFilter(t.key)}
+            className={cn("rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors", filter === t.key ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+            {t.label} <span className="text-xs text-muted-foreground">({sar(t.count)})</span>
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
+        </div>
+      ) : shown.length ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {shown.map((p) => (
+            <ProjectCard key={p.id} project={p} onEdit={() => { setEditing(p); setOpen(true); }} onDelete={() => remove(p)} />
+          ))}
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[60vh]">
-            <div className="flex flex-col items-center gap-4 text-center">
-            <h3 className="text-2xl font-bold tracking-tight">
-                ما عندك أي مشاريع حاليًا.
-            </h3>
-            <p className="text-sm text-muted-foreground">
-                ابدأ بإنشاء مشروع جديد.
-            </p>
-             <Button onClick={handleOpenDialog}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                إنشاء مشروع
-            </Button>
-            </div>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed text-center">
+          <h3 className="text-xl font-bold">ما فيه مشاريع هنا للحين</h3>
+          <p className="text-sm text-muted-foreground">ابدأ بمشروع شخصي أو مشروع لعميل.</p>
+          <Button onClick={openNew}><PlusCircle className="me-2 h-4 w-4" /> مشروع جديد</Button>
         </div>
       )}
     </div>
