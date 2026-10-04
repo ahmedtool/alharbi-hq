@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash2, Printer, Save, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { PlusCircle, Trash2, Download, Save, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
@@ -22,7 +21,7 @@ import { cn } from "@/lib/utils";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Card, CardContent } from "@/components/ui/card";
-import { AmiriFont } from '@/lib/fonts/amiri-font';
+import { logoAt } from "@/lib/brand";
 import { ar } from "date-fns/locale";
 import { format } from "date-fns";
 
@@ -78,7 +77,7 @@ export function InvoiceForm() {
     { id: 1, description: "", quantity: 1, price: 0 },
   ]);
   
-  const [yourDetails, setYourDetails] = useState("أحمد الحربي\nمطور ويب مستقل\nالرياض، المملكة العربية السعودية\nhi@ahmedalharbi.com");
+  const [yourDetails, setYourDetails] = useState("أحمد الحربي\nالمطوّر\nالرياض، المملكة العربية السعودية\nhi@ahmedalharbi.com");
   const [clientName, setClientName] = useState("");
   const [clientCompany, setClientCompany] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -193,15 +192,6 @@ export function InvoiceForm() {
       return { subtotal, total };
   }, [lineItems]);
 
-    const b64Decode = (str: string) => {
-        if (typeof window !== 'undefined') {
-            // Remove non-base64 characters
-            const cleanStr = str.replace(/[^A-Za-z0-9+/=]/g, '');
-            return window.atob(cleanStr);
-        }
-        return Buffer.from(str, 'base64').toString('binary');
-    };
-
     const handleGeneratePdf = async () => {
         const input = invoiceSheetRef.current;
         if (!input) {
@@ -214,45 +204,43 @@ export function InvoiceForm() {
             textareas.forEach(ta => ta.style.height = `${ta.scrollHeight}px`);
 
             const canvas = await html2canvas(input, {
-                scale: 3, 
+                scale: 2,
                 useCORS: true,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                // Always A4-like width, even when saved from a phone.
+                windowWidth: 1024,
+                width: 820,
+                // html2canvas draws letter-by-letter when letter-spacing is set,
+                // which breaks Arabic joining — reset it in the cloned page.
+                onclone: (docClone, el) => {
+                    el.style.width = '820px';
+                    el.style.maxWidth = '820px';
+                    const st = docClone.createElement('style');
+                    st.textContent = '* { letter-spacing: normal !important; } #invoice-sheet { border: 0 !important; box-shadow: none !important; }';
+                    docClone.head.appendChild(st);
+                },
             });
 
             textareas.forEach(ta => ta.style.height = '');
-            
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
 
-            // Add the Amiri font
-            pdf.addFileToVFS("Amiri-Regular.ttf", b64Decode(AmiriFont));
-            pdf.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-            pdf.setFont("Amiri");
-            
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            const margin = 10; // 10mm margin
-            const contentWidth = pdfWidth - (margin * 2);
-            
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / canvasHeight;
-
-            let imgHeight = contentWidth / ratio;
-
-            if (imgHeight > pdfHeight - (margin * 2)) {
-                imgHeight = pdfHeight - (margin * 2);
+            const margin = 10;
+            const contentWidth = pdfWidth - margin * 2;
+            const pageContentHeight = pdfHeight - margin * 2;
+            // Slice the tall canvas into A4 pages instead of shrinking it onto one.
+            const pxPerMm = canvas.width / contentWidth;
+            const slicePx = Math.floor(pageContentHeight * pxPerMm);
+            for (let y = 0, page = 0; y < canvas.height; y += slicePx, page++) {
+                const h = Math.min(slicePx, canvas.height - y);
+                const part = document.createElement('canvas');
+                part.width = canvas.width;
+                part.height = h;
+                part.getContext('2d')!.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+                if (page > 0) pdf.addPage();
+                pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, contentWidth, h / pxPerMm);
             }
-            const imgWidth = imgHeight * ratio;
-
-            const xPos = (pdfWidth - imgWidth) / 2;
-            const yPos = margin;
-
-            pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
             return pdf.output('blob');
 
         } catch (error) {
@@ -354,12 +342,11 @@ export function InvoiceForm() {
     }
   }
   
-    const handlePrint = async () => {
-        const pdfBlob = await handleGeneratePdf();
-        if (pdfBlob) {
-            const url = URL.createObjectURL(pdfBlob);
-            window.open(url);
-        }
+    const handlePrint = () => {
+        const old = document.title;
+        document.title = `فاتورة ${invoiceNumber}${clientCompany || clientName ? ` - ${clientCompany || clientName}` : ""}`;
+        window.print();
+        document.title = old;
     }
 
 
@@ -373,7 +360,7 @@ export function InvoiceForm() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 text-right print:hidden">
+      <div className="no-print p-4 sm:p-6 lg:p-8 text-right print:hidden">
         <PageHeader
           title={invoiceId ? `تعديل فاتورة ${invoiceNumber}` : "اداة الفاتورة"}
           description="أنشئ فواتير احترافية وأرسلها لعملائك بسهولة."
@@ -384,14 +371,14 @@ export function InvoiceForm() {
                 {isSaving ? "جاري الحفظ..." : "حفظ وأرشفة الفاتورة"}
                 </Button>
                 <Button onClick={handlePrint} className="w-full">
-                    <Printer className="ml-2 h-4 w-4" />
-                    طباعة / تحميل PDF
+                    <Download className="ml-2 h-4 w-4" />
+                    تحميل PDF
                 </Button>
             </div>
         </PageHeader>
       </div>
       
-      <main className="bg-muted/30 p-4 sm:p-6 lg:p-10 print:p-0">
+      <main className="contract-page bg-muted/30 p-4 sm:p-6 lg:p-10 print:p-0">
           <div className="max-w-4xl mx-auto grid gap-6 print:block">
             {/* Form Section */}
             <Card className="print:hidden">
@@ -480,91 +467,121 @@ export function InvoiceForm() {
             </Card>
 
             {/* PDF Output Section */}
-            <div id="invoice-sheet" ref={invoiceSheetRef} className="bg-card text-card-foreground shadow-lg rounded-lg print:shadow-none print:border-0 print:rounded-none">
-                <div className="p-8 md:p-12 space-y-10">
-                    <header className="grid grid-cols-2 items-start">
-                        <div />
-                        <div className="flex flex-col items-end gap-1" dir="rtl">
-                            <h1 className="text-3xl font-bold text-primary">فاتورة مبيعات</h1>
-                            <p className="text-muted-foreground">{invoiceNumber}</p>
-                        </div>
-                    </header>
-                    <Separator/>
-                    <section className="grid grid-cols-3 gap-6 text-sm">
-                        <div className="grid gap-1">
-                            <h2 className="font-bold text-muted-foreground mb-1">المرسل</h2>
-                            <div className="whitespace-pre-wrap">{yourDetails}</div>
-                        </div>
-                        <div className="grid gap-1">
-                            <h2 className="font-bold text-muted-foreground mb-1">العميل</h2>
-                            <p className="font-semibold">{clientName}</p>
-                            <p>{clientCompany}</p>
-                        </div>
-                        <div className="grid gap-1 text-right">
-                             <div className="grid grid-cols-2">
-                                <span className="font-bold">تاريخ الإصدار:</span>
-                                <span>{format(new Date(invoiceDate), "d MMMM yyyy", { locale: ar })}</span>
-                             </div>
-                             <div className="grid grid-cols-2">
-                                <span className="font-bold">تاريخ الاستحقاق:</span>
-                                <span>{format(new Date(dueDate), "d MMMM yyyy", { locale: ar })}</span>
-                             </div>
-                            {projectName && (
-                                <div className="grid grid-cols-2 mt-2">
-                                    <span className="font-bold">المشروع:</span>
-                                    <span>{projectName}</span>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                    <section>
-                          <Table dir="rtl">
-                              <TableHeader>
-                                  <TableRow className="bg-muted/50">
-                                      <TableHead className="w-[50%] rounded-r-lg">الخدمة / المنتج</TableHead>
-                                      <TableHead className="text-center">الكمية</TableHead>
-                                      <TableHead className="text-center">سعر الوحدة</TableHead>
-                                      <TableHead className="text-left rounded-l-lg">الإجمالي</TableHead>
-                                  </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                 {lineItems.map(item => (
-                                      <TableRow key={item.id} className="border-b">
-                                          <TableCell className="font-medium whitespace-pre-wrap">{item.description}</TableCell>
-                                          <TableCell className="text-center">{new Intl.NumberFormat('ar-SA').format(item.quantity)}</TableCell>
-                                          <TableCell className="text-center">{new Intl.NumberFormat('ar-SA').format(item.price)}</TableCell>
-                                          <TableCell className="text-left font-medium">{new Intl.NumberFormat('ar-SA').format(item.quantity * item.price)}</TableCell>
-                                      </TableRow>
-                                 ))}
-                              </TableBody>
-                          </Table>
-                    </section>
-                    <section className="grid grid-cols-1 md:grid-cols-2 items-start gap-12">
-                       <div className="grid gap-2 text-sm">
-                            <h3 className="font-bold text-muted-foreground">ملاحظات</h3>
-                            <p className="whitespace-pre-wrap">{notes}</p>
-                       </div>
-                       <div className="text-right space-y-2" dir="rtl">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">المجموع الفرعي:</span>
-                                <span dir="ltr" className="font-medium">{new Intl.NumberFormat('ar-SA').format(subtotal)} <span className="saudi-riyal">&#xea;</span></span>
-                            </div>
-                            <Separator />
-                             <div className="flex justify-between font-bold text-xl bg-primary/10 p-3 rounded-lg text-primary">
-                                <span>الإجمالي المستحق:</span>
-                                <span dir="ltr">{new Intl.NumberFormat('ar-SA').format(total)} <span className="saudi-riyal">&#xea;</span></span>
-                            </div>
-                       </div>
-                    </section>
-                    <footer className="pt-8 text-center text-xs text-muted-foreground">
-                       <p>في حال وجود أي استفسار بخصوص هذه الفاتورة، يرجى التواصل معنا.</p>
-                    </footer>
-                </div>
-            </div>
+            <InvoiceSheet
+              sheetRef={invoiceSheetRef}
+              invoiceNumber={invoiceNumber}
+              invoiceDate={invoiceDate}
+              dueDate={dueDate}
+              yourDetails={yourDetails}
+              clientName={clientName}
+              clientCompany={clientCompany}
+              projectName={projectName}
+              lineItems={lineItems}
+              total={total}
+              notes={notes}
+            />
           </div>
       </main>
     </>
   );
+}
+
+const fmtDate = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "—" : format(d, "d MMMM yyyy", { locale: ar });
+};
+const num = (x: number) => new Intl.NumberFormat('ar-SA').format(x || 0);
+
+/** The printable invoice: fixed light colours so it looks the same in dark mode and in the PDF. */
+function InvoiceSheet({ sheetRef, invoiceNumber, invoiceDate, dueDate, yourDetails, clientName, clientCompany, projectName, lineItems, total, notes }: {
+    sheetRef: React.RefObject<HTMLDivElement>;
+    invoiceNumber: string; invoiceDate: string; dueDate: string; yourDetails: string;
+    clientName: string; clientCompany: string; projectName: string;
+    lineItems: LineItem[]; total: number; notes: string;
+}) {
+    const [providerName, providerTitle, ...providerRest] = yourDetails.split('\n');
+    const items = lineItems.filter(i => i.description.trim() || i.price);
+    return (
+        <div ref={sheetRef} id="invoice-sheet" dir="rtl" className="contract-sheet mx-auto w-full max-w-[820px] rounded-2xl border bg-white p-8 text-[13px] leading-[1.9] text-neutral-900 shadow-xl sm:p-12">
+            <header className="flex items-start justify-between gap-6 border-b-2 border-neutral-900 pb-5">
+                <div className="flex items-center gap-3">
+                    <img src={logoAt(96)} alt="" width={52} height={52} crossOrigin="anonymous" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-[52px] w-[52px] rounded-xl object-cover" />
+                    <div>
+                        <p className="text-lg font-bold leading-tight">{providerName || "أحمد الحربي"}</p>
+                        <p className="text-xs text-neutral-500">{providerTitle || "المطوّر"}</p>
+                    </div>
+                </div>
+                <div className="text-left">
+                    <p className="text-2xl font-bold leading-tight">فاتورة</p>
+                    <p className="text-xs text-neutral-500" dir="ltr">{invoiceNumber}</p>
+                </div>
+            </header>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <p className="mb-1 text-xs font-bold text-neutral-500">من</p>
+                    <p className="font-bold">{providerName || "أحمد الحربي"}</p>
+                    {providerRest.filter(Boolean).map((l, i) => <p key={i} className="text-xs text-neutral-600">{l}</p>)}
+                </div>
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <p className="mb-1 text-xs font-bold text-neutral-500">إلى</p>
+                    <p className="font-bold">{clientCompany || clientName || "—"}</p>
+                    {clientCompany && clientName && <p className="text-xs text-neutral-600">{clientName}</p>}
+                    {projectName && <p className="text-xs text-neutral-600">المشروع: {projectName}</p>}
+                </div>
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-xs">
+                    <div className="flex justify-between gap-2"><span className="text-neutral-500">تاريخ الإصدار</span><b>{fmtDate(invoiceDate)}</b></div>
+                    <div className="mt-1 flex justify-between gap-2"><span className="text-neutral-500">تاريخ الاستحقاق</span><b>{fmtDate(dueDate)}</b></div>
+                    <div className="mt-1 flex justify-between gap-2"><span className="text-neutral-500">رقم الفاتورة</span><b dir="ltr">{invoiceNumber}</b></div>
+                </div>
+            </div>
+
+            <table className="mt-6 w-full border-collapse text-right">
+                <thead>
+                    <tr className="bg-neutral-900 text-white">
+                        <th className="rounded-r-lg px-3 py-2 text-xs font-bold">#</th>
+                        <th className="w-1/2 px-3 py-2 text-xs font-bold">الخدمة / المنتج</th>
+                        <th className="px-3 py-2 text-center text-xs font-bold">الكمية</th>
+                        <th className="px-3 py-2 text-center text-xs font-bold">سعر الوحدة</th>
+                        <th className="rounded-l-lg px-3 py-2 text-left text-xs font-bold">الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {(items.length ? items : lineItems).map((item, i) => (
+                        <tr key={item.id} className="border-b border-neutral-200 align-top">
+                            <td className="px-3 py-2.5 text-neutral-500">{num(i + 1)}</td>
+                            <td className="whitespace-pre-wrap px-3 py-2.5 font-medium">{item.description || "—"}</td>
+                            <td className="px-3 py-2.5 text-center">{num(item.quantity)}</td>
+                            <td className="px-3 py-2.5 text-center">{num(item.price)}</td>
+                            <td className="px-3 py-2.5 text-left font-semibold">{num(item.quantity * item.price)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            <div className="mt-6 grid items-start gap-6 sm:grid-cols-2">
+                <div>
+                    {notes && (<>
+                        <p className="mb-1 text-xs font-bold text-neutral-500">ملاحظات</p>
+                        <p className="whitespace-pre-wrap text-neutral-700">{notes}</p>
+                    </>)}
+                </div>
+                <div className="sign-block rounded-xl border-2 border-neutral-900 p-4">
+                    <div className="flex items-center justify-between text-xs text-neutral-500">
+                        <span>عدد البنود</span><span>{num(items.length)}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between border-t border-neutral-200 pt-2">
+                        <span className="font-bold">الإجمالي المستحق</span>
+                        <span className="text-xl font-bold">{num(total)} <span className="text-sm">ريال</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <footer className="mt-10 border-t border-neutral-200 pt-4 text-center text-[11px] text-neutral-500">
+                في حال وجود أي استفسار بخصوص هذه الفاتورة، يرجى التواصل معنا · ahmedalharbi.com
+            </footer>
+        </div>
+    );
 }
 
 const ProductCombobox = ({
