@@ -1,429 +1,352 @@
-
 "use client";
 
 import * as React from "react";
-import { db } from "@/lib/db";
-import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc, deleteDoc, getDoc, writeBatch } from "@/lib/db";
-import { PageHeader } from "@/components/app/page-header";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from 'date-fns';
-import { ar } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PlusCircle, Edit, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Label } from "@/components/ui/label";
+import { db } from "@/lib/db";
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from "@/lib/db";
+import { PageHeader } from "@/components/app/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { Field } from "@/components/app/form-bits";
+import { Check, FileDigit, FileText, Loader2, MessageCircle, MoreHorizontal, PlusCircle, Search, Undo2 } from "lucide-react";
+import { waNumber } from "@/app/clients/model";
 
+/* Model --------------------------------------------------------------------- */
+type Status = "unpaid" | "paid" | "overdue";
+interface LineItem { description: string; quantity: number; price: number }
 interface Invoice {
-    id: string;
-    invoiceNumber: string;
-    clientName: string;
-    total: number;
-    invoiceDate: string;
-    dueDate: string;
-    status: "paid" | "unpaid" | "overdue";
-    paymentMethod: string;
-    internalNotes: string;
+  id: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  status: Status;
+  clientName?: string; clientCompany?: string; clientPhone?: string;
+  projectName?: string;
+  lineItems?: LineItem[];
+  total: number;
+  vat?: boolean;
+  paymentMethod: string;
+  internalNotes: string;
+  paidAt?: string;
 }
 
-const EditInvoiceDialog = ({ invoice, onSave, onClose }: { invoice: Invoice, onSave: () => void, onClose: () => void }) => {
-    const { toast } = useToast();
-    const [status, setStatus] = React.useState(invoice.status);
-    const [paymentMethod, setPaymentMethod] = React.useState(invoice.paymentMethod);
-    const [internalNotes, setInternalNotes] = React.useState(invoice.internalNotes);
-    const [isLoading, setIsLoading] = React.useState(false);
+const STATUS: Record<Status, { label: string; tone: string }> = {
+  unpaid: { label: "غير مدفوعة", tone: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200" },
+  paid: { label: "مدفوعة", tone: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200" },
+  overdue: { label: "متأخرة", tone: "bg-red-100 text-red-900 dark:bg-red-900/30 dark:text-red-200" },
+};
+const PAYMENT_METHODS = ["تحويل بنكي", "مدى", "بطاقة ائتمانية", "Apple Pay", "نقدًا", "متجر سلة"];
 
-    const handleSaveChanges = async () => {
-        setIsLoading(true);
-        const invoiceRef = doc(db, "invoices", invoice.id);
-        const transactionId = `inv_${invoice.id}`;
-        const transactionRef = doc(db, "transactions", transactionId);
+const n = (x: number) => new Intl.NumberFormat("ar-SA").format(Math.round(x || 0));
+const day = (iso?: string) => {
+  if (!iso) return null;
+  const d = new Date(iso.slice(0, 10) + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+};
+const fmtDate = (iso?: string) => day(iso)?.toLocaleDateString("ar-SA-u-nu-arab-ca-gregory", { day: "numeric", month: "short", year: "numeric" }) ?? "—";
+const daysUntil = (iso?: string) => {
+  const d = day(iso);
+  if (!d) return null;
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - t.getTime()) / 86400000);
+};
+const who = (i: Invoice) => i.clientCompany || i.clientName || "بدون عميل";
 
-        try {
-            await updateDoc(invoiceRef, { status, paymentMethod, internalNotes });
-
-             if (status === 'paid') {
-                const invoiceDoc = await getDoc(invoiceRef);
-                const invoiceData = invoiceDoc.data();
-                if(invoiceData) {
-                    await setDoc(transactionRef, {
-                        id: transactionId,
-                        description: `دخل من الفاتورة #${invoiceData.invoiceNumber}`,
-                        amount: invoiceData.total,
-                        type: 'income',
-                        category: 'دخل فواتير',
-                        date: new Date().toISOString()
-                    });
-                }
-            } else {
-                if ((await getDoc(transactionRef)).exists()) {
-                    await deleteDoc(transactionRef);
-                }
-            }
-
-            toast({ title: "تم تحديث الفاتورة بنجاح" });
-
-            onSave();
-            onClose();
-        } catch (error) {
-            console.error("Error updating invoice:", error);
-            toast({ variant: "destructive", title: "خطأ في تحديث الفاتورة" });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>تعديل حالة الفاتورة #{invoice.invoiceNumber}</DialogTitle>
-                <DialogDescription>
-                    قم بتحديث حالة الدفع أو الملاحظات الداخلية لهذه الفاتورة.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-6 py-4 text-right">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right">حالة الفاتورة</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as Invoice['status'])}>
-                        <SelectTrigger id="status" className="col-span-3">
-                            <SelectValue placeholder="اختر الحالة" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="unpaid">قائمة (غير مدفوعة)</SelectItem>
-                            <SelectItem value="paid">مدفوعة</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paymentMethod" className="text-right">طريقة الدفع</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <SelectTrigger id="paymentMethod" className="col-span-3">
-                            <SelectValue placeholder="اختر طريقة الدفع" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="تحويل بنكي">تحويل بنكي</SelectItem>
-                            <SelectItem value="متجر سلة">متجر سلة</SelectItem>
-                            <SelectItem value="نقدي">نقدي</SelectItem>
-                            <SelectItem value="أخرى">أخرى</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="internalNotes" className="text-right pt-2">ملاحظات داخلية</Label>
-                    <Textarea id="internalNotes" value={internalNotes} onChange={e => setInternalNotes(e.target.value)} placeholder="ملاحظات خاصة لك..." className="col-span-3" rows={4} />
-                </div>
-            </div>
-            <DialogFooter>
-                <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
-                <Button onClick={handleSaveChanges} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "حفظ التغييرات"}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    )
+/** Paid invoices count as income in finance (same transaction id the invoice tool uses). */
+async function syncTransaction(inv: Invoice, status: Status) {
+  const txRef = doc(db, "transactions", `inv_${inv.id}`);
+  if (status === "paid") {
+    await setDoc(txRef, { id: `inv_${inv.id}`, description: `دخل من الفاتورة #${inv.invoiceNumber}`, amount: inv.total, type: "income", category: "دخل فواتير", date: new Date().toISOString() });
+  } else if ((await getDoc(txRef)).exists()) {
+    await deleteDoc(txRef);
+  }
 }
+
+/* Edit (payment details) ---------------------------------------------------- */
+function EditDialog({ invoice, onSaved, onClose }: { invoice: Invoice; onSaved: () => void; onClose: () => void }) {
+  const { toast } = useToast();
+  const [status, setStatus] = React.useState<Status>(invoice.status === "overdue" ? "unpaid" : invoice.status);
+  const [paymentMethod, setPaymentMethod] = React.useState(invoice.paymentMethod);
+  const [internalNotes, setInternalNotes] = React.useState(invoice.internalNotes);
+  const [saving, setSaving] = React.useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "invoices", invoice.id), { status, paymentMethod, internalNotes, ...(status === "paid" && invoice.status !== "paid" ? { paidAt: new Date().toISOString() } : {}) });
+      await syncTransaction(invoice, status);
+      toast({ title: "تم تحديث الفاتورة" });
+      onSaved();
+      onClose();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نحدّث الفاتورة" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>الدفع · <span dir="ltr">{invoice.invoiceNumber}</span></DialogTitle>
+        <DialogDescription>{who(invoice)} · {n(invoice.total)} ريال</DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4">
+        <div className="inline-flex w-full rounded-xl bg-muted p-1">
+          {(["unpaid", "paid"] as Status[]).map((s) => (
+            <button key={s} type="button" onClick={() => setStatus(s)}
+              className={cn("flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors", status === s ? "bg-background shadow-sm" : "text-muted-foreground")}>
+              {STATUS[s].label}
+            </button>
+          ))}
+        </div>
+        <Field label="طريقة الدفع">
+          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{[...new Set([...PAYMENT_METHODS, paymentMethod])].filter(Boolean).map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="ملاحظات داخلية"><Textarea rows={3} value={internalNotes} onChange={(e) => setInternalNotes(e.target.value)} placeholder="ما تظهر في الفاتورة" /></Field>
+      </div>
+      <DialogFooter>
+        <Button variant="ghost" onClick={onClose}>إلغاء</Button>
+        <Button onClick={save} disabled={saving}>{saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />} حفظ</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+/* Card ---------------------------------------------------------------------- */
+function InvoiceCard({ inv, onTogglePaid, onEdit, onDelete, busy }: { inv: Invoice; onTogglePaid: () => void; onEdit: () => void; onDelete: () => void; busy: boolean }) {
+  const router = useRouter();
+  const open = () => router.push(`/tools/invoice-generator?id=${inv.id}`);
+  const st = STATUS[inv.status] ?? STATUS.unpaid;
+  const days = daysUntil(inv.dueDate);
+  const due = inv.status === "paid" ? null
+    : days === null ? null
+    : days < 0 ? { text: `متأخرة ${n(-days)} يوم`, late: true }
+    : days === 0 ? { text: "تستحق اليوم", late: true }
+    : { text: `تستحق خلال ${n(days)} يوم`, late: false };
+  const items = (inv.lineItems || []).filter((l) => l.description?.trim());
+  const wa = waNumber(inv.clientPhone);
+  const reminder = `أهلًا ${inv.clientName || ""}، تذكير بسيط بفاتورة ${inv.invoiceNumber} بمبلغ ${n(inv.total)} ريال${inv.dueDate ? ` المستحقة بتاريخ ${fmtDate(inv.dueDate)}` : ""}. شاكر لك 🙏`;
+
+  return (
+    <article onClick={open} className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-0.5 hover:border-foreground/40 hover:shadow-lg">
+      {/* paper-like header, echoing the invoice sheet */}
+      <div className="flex items-start justify-between gap-3 border-b-2 border-foreground/80 px-5 pb-3 pt-4">
+        <div className="min-w-0">
+          <p className="truncate text-lg font-bold">{who(inv)}</p>
+          <p className="truncate text-xs text-muted-foreground">{inv.projectName || (inv.clientCompany && inv.clientName ? inv.clientName : "—")}</p>
+        </div>
+        <div className="flex shrink-0 items-start gap-1">
+          <div className="text-left">
+            <p className="text-sm font-bold">{inv.vat ? "فاتورة ضريبية" : "فاتورة"}</p>
+            <p className="text-[11px] text-muted-foreground" dir="ltr">{inv.invoiceNumber}</p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">خيارات</span><MoreHorizontal className="h-4 w-4" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={open}>فتح وتعديل الفاتورة</DropdownMenuItem>
+              <DropdownMenuItem onClick={onEdit}>الدفع والملاحظات</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-destructive">حذف</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", st.tone)}>{st.label}</span>
+          {due && <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", due.late ? "border-destructive/40 text-destructive" : "text-muted-foreground")}>{due.text}</span>}
+          {inv.status === "paid" && inv.paymentMethod && <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">{inv.paymentMethod}</span>}
+        </div>
+
+        <ul className="space-y-0.5 text-sm text-muted-foreground">
+          {items.slice(0, 2).map((l, i) => <li key={i} className="truncate">• {l.description.split("\n")[0]}</li>)}
+          {items.length > 2 && <li className="text-xs">+ {n(items.length - 2)} بنود أخرى</li>}
+          {!items.length && <li>—</li>}
+        </ul>
+
+        <div className="mt-auto flex items-end justify-between gap-3 border-t pt-3">
+          <div>
+            <p className="text-[11px] text-muted-foreground">صدرت {fmtDate(inv.invoiceDate)}</p>
+            <p className="text-2xl font-bold">{n(inv.total)} <span className="saudi-riyal text-base">&#xea;</span></p>
+          </div>
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {inv.status !== "paid" && wa && (
+              <Button asChild variant="outline" size="icon" title="تذكير واتساب">
+                <a href={`https://wa.me/${wa}?text=${encodeURIComponent(reminder)}`} target="_blank" rel="noopener"><MessageCircle className="h-4 w-4" /></a>
+              </Button>
+            )}
+            <Button size="sm" variant={inv.status === "paid" ? "outline" : "default"} onClick={onTogglePaid} disabled={busy}>
+              {busy ? <Loader2 className="me-1.5 h-4 w-4 animate-spin" /> : inv.status === "paid" ? <Undo2 className="me-1.5 h-4 w-4" /> : <Check className="me-1.5 h-4 w-4" />}
+              {inv.status === "paid" ? "تراجع" : "تم الدفع"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/* Page ---------------------------------------------------------------------- */
+type Filter = "all" | Status;
 
 export default function InvoicesPage() {
   const { toast } = useToast();
-  const router = useRouter();
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = React.useState<Filter>("all");
+  const [search, setSearch] = React.useState("");
+  const [editing, setEditing] = React.useState<Invoice | null>(null);
+  const [busyId, setBusyId] = React.useState<string | null>(null);
 
-  const fetchInvoices = React.useCallback(async () => {
-    setIsLoading(true);
+  const load = React.useCallback(async () => {
     try {
-        const q = query(collection(db, "invoices"), orderBy("invoiceDate", "desc"));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => {
-            const invoiceData = doc.data();
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const dueDate = parseISO(invoiceData.dueDate);
-            let status = invoiceData.status || "unpaid";
-            if (status === 'unpaid' && dueDate < today) {
-                status = "overdue";
-            }
-            return { 
-                id: doc.id, 
-                ...invoiceData,
-                status,
-                paymentMethod: invoiceData.paymentMethod || 'تحويل بنكي',
-                internalNotes: invoiceData.internalNotes || '',
-            } as Invoice
-        });
-        setInvoices(data);
-    } catch (error) {
-        toast({ variant: "destructive", title: "حدث خطأ أثناء جلب الفواتير." });
+      const snap = await getDocs(collection(db, "invoices"));
+      const list = snap.docs.map((d) => {
+        const x = d.data() as Omit<Invoice, "id">;
+        const late = (x.status || "unpaid") !== "paid" && (daysUntil(x.dueDate) ?? 0) < 0;
+        return {
+          ...x, id: d.id,
+          status: (late ? "overdue" : x.status || "unpaid") as Status,
+          total: Number(x.total) || 0,
+          paymentMethod: x.paymentMethod || "تحويل بنكي",
+          internalNotes: x.internalNotes || "",
+        };
+      });
+      list.sort((a, b) => (b.invoiceDate || "").localeCompare(a.invoiceDate || "") || (b.invoiceNumber || "").localeCompare(a.invoiceNumber || ""));
+      setInvoices(list);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نجيب الفواتير" });
     } finally {
-        setIsLoading(false);
+      setLoading(false);
     }
   }, [toast]);
 
-  React.useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-        case 'paid':
-            return <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">مدفوعة</Badge>;
-        case 'overdue':
-            return <Badge variant="destructive">متأخرة</Badge>;
-        case 'unpaid':
-        default:
-            return <Badge variant="secondary">قائمة</Badge>;
+  React.useEffect(() => { load(); }, [load]);
+
+  const togglePaid = async (inv: Invoice) => {
+    const next: Status = inv.status === "paid" ? "unpaid" : "paid";
+    setBusyId(inv.id);
+    try {
+      await updateDoc(doc(db, "invoices", inv.id), { status: next, ...(next === "paid" ? { paidAt: new Date().toISOString() } : {}) });
+      await syncTransaction(inv, next);
+      toast({ title: next === "paid" ? `تم تسجيل ${n(inv.total)} ريال كدخل` : "رجعت الفاتورة غير مدفوعة" });
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نحدّث الفاتورة" });
+    } finally {
+      setBusyId(null);
     }
-  }
+  };
 
-  const handleEditClick = (invoice: Invoice) => {
-      setSelectedInvoice(invoice);
-      setIsDialogOpen(true);
-  }
-
-  const handleDeleteInvoice = async (invoice: Invoice) => {
-      if (!window.confirm("هل أنت متأكد من حذف هذه الفاتورة؟ سيتم حذف المعاملة المالية المرتبطة بها أيضًا.")) return;
-
-      try {
-          // Delete invoice
-          await deleteDoc(doc(db, "invoices", invoice.id));
-
-          // Delete associated transaction
-          const transactionId = `inv_${invoice.id}`;
-          const transactionRef = doc(db, "transactions", transactionId);
-          if ((await getDoc(transactionRef)).exists()) {
-              await deleteDoc(transactionRef);
-          }
-          
-          toast({ title: "تم حذف الفاتورة بنجاح" });
-          fetchInvoices();
-
-      } catch (error) {
-          console.error("Error deleting invoice:", error);
-          toast({ variant: "destructive", title: "خطأ في حذف الفاتورة" });
-      }
-  }
-
-    const handleSelectRow = (id: string) => {
-        setSelectedRows(prev => 
-            prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
-        );
-    };
-
-    const handleSelectAll = (checked: boolean | string) => {
-        if (checked) {
-            setSelectedRows(invoices.map(inv => inv.id));
-        } else {
-            setSelectedRows([]);
-        }
-    };
-    
-    const handleBulkDelete = async () => {
-        if (selectedRows.length === 0) return;
-        setIsDeleting(true);
-        try {
-            const batch = writeBatch(db);
-            selectedRows.forEach(id => {
-                const invoiceRef = doc(db, "invoices", id);
-                batch.delete(invoiceRef);
-
-                const transactionId = `inv_${id}`;
-                const transactionRef = doc(db, "transactions", transactionId);
-                batch.delete(transactionRef); // This won't throw error if doc doesn't exist
-            });
-            await batch.commit();
-
-            toast({ title: `تم حذف ${selectedRows.length} فاتورة بنجاح` });
-
-            fetchInvoices();
-            setSelectedRows([]);
-
-        } catch (error) {
-            console.error("Error deleting invoices:", error);
-            toast({ variant: "destructive", title: "خطأ في حذف الفواتير" });
-        } finally {
-            setIsDeleting(false);
-        }
+  const remove = async (inv: Invoice) => {
+    if (!window.confirm(`حذف الفاتورة ${inv.invoiceNumber}؟ بينحذف معها الدخل المسجّل لها.`)) return;
+    try {
+      await deleteDoc(doc(db, "invoices", inv.id));
+      const tx = doc(db, "transactions", `inv_${inv.id}`);
+      if ((await getDoc(tx)).exists()) await deleteDoc(tx);
+      toast({ title: "انحذفت الفاتورة" });
+      load();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نحذف الفاتورة" });
     }
+  };
 
+  const unpaid = invoices.filter((i) => i.status !== "paid");
+  const overdue = invoices.filter((i) => i.status === "overdue");
+  const paid = invoices.filter((i) => i.status === "paid");
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const paidThisMonth = paid.filter((i) => (i.paidAt || i.invoiceDate || "").slice(0, 7) === thisMonth);
+  const sum = (l: Invoice[]) => l.reduce((s, i) => s + i.total, 0);
+
+  const q = search.trim().toLowerCase();
+  const shown = invoices
+    .filter((i) => filter === "all" || (filter === "unpaid" ? i.status !== "paid" : i.status === filter))
+    .filter((i) => !q || [i.invoiceNumber, i.clientName, i.clientCompany, i.projectName].some((s) => (s || "").toLowerCase().includes(q)));
+
+  const tabs: { key: Filter; label: string; count: number }[] = [
+    { key: "all", label: "الكل", count: invoices.length },
+    { key: "unpaid", label: "غير مدفوعة", count: unpaid.length },
+    { key: "overdue", label: "متأخرة", count: overdue.length },
+    { key: "paid", label: "مدفوعة", count: paid.length },
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 text-right">
-      <PageHeader
-        title="الفواتير"
-        description="عرض وإدارة جميع الفواتير الصادرة."
-      >
-        <Button asChild>
-            <Link href="/tools/invoice-generator">
-                <PlusCircle className="ml-2 h-4 w-4" />
-                إنشاء فاتورة جديدة
-            </Link>
-        </Button>
+      <PageHeader title="الفواتير" description="كل فواتيرك: وش انحصّل، وش باقي عند العملاء، ووش تأخر.">
+        <Button asChild variant="outline"><Link href="/tools/quote-builder"><FileText className="me-2 h-4 w-4" /> عرض سعر</Link></Button>
+        <Button asChild><Link href="/tools/invoice-generator"><PlusCircle className="me-2 h-4 w-4" /> فاتورة جديدة</Link></Button>
       </PageHeader>
-      
-      {selectedRows.length > 0 && (
-          <div className="mb-4 flex items-center gap-4 p-3 bg-muted rounded-lg">
-             <p className="text-sm font-medium">
-                {new Intl.NumberFormat('ar-SA').format(selectedRows.length)} فاتورة محددة
-             </p>
-             <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isDeleting}>
-                        <Trash2 className="ml-2 h-4 w-4" />
-                        حذف المحدد
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            سيتم حذف {new Intl.NumberFormat('ar-SA').format(selectedRows.length)} فاتورة بشكل نهائي، بالإضافة إلى أي معاملات مالية مرتبطة بها. لا يمكن التراجع عن هذا الإجراء.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBulkDelete} disabled={isDeleting}>
-                            {isDeleting ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : "نعم، حذف"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+
+      <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+        {[
+          { label: "مستحق عند العملاء", value: <>{n(sum(unpaid))} <span className="saudi-riyal">&#xea;</span></>, sub: `${n(unpaid.length)} فاتورة` },
+          { label: "متأخر", value: <>{n(sum(overdue))} <span className="saudi-riyal">&#xea;</span></>, sub: `${n(overdue.length)} فاتورة`, warn: overdue.length > 0 },
+          { label: "انحصّل هالشهر", value: <>{n(sum(paidThisMonth))} <span className="saudi-riyal">&#xea;</span></>, sub: `${n(paidThisMonth.length)} فاتورة` },
+          { label: "إجمالي المحصّل", value: <>{n(sum(paid))} <span className="saudi-riyal">&#xea;</span></>, sub: `${n(paid.length)} فاتورة` },
+        ].map((s) => (
+          <div key={s.label} className={cn("rounded-2xl border bg-card p-4", s.warn && "border-destructive/40")}>
+            <p className={cn("text-xs text-muted-foreground", s.warn && "text-destructive")}>{s.label}</p>
+            <p className="mt-1 text-xl font-bold md:text-2xl">{s.value}</p>
+            <p className="text-[11px] text-muted-foreground">{s.sub}</p>
           </div>
+        ))}
+      </div>
+
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex max-w-full overflow-x-auto rounded-xl bg-muted p-1">
+          {tabs.map((t) => (
+            <button key={t.key} type="button" onClick={() => setFilter(t.key)}
+              className={cn("whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors", filter === t.key ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              {t.label} <span className="text-xs text-muted-foreground">({n(t.count)})</span>
+            </button>
+          ))}
+        </div>
+        <div className="relative sm:w-72">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث بالعميل أو الرقم أو المشروع" className="ps-9" />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-60 rounded-2xl" />)}
+        </div>
+      ) : shown.length ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {shown.map((inv) => (
+            <InvoiceCard key={inv.id} inv={inv} busy={busyId === inv.id} onTogglePaid={() => togglePaid(inv)} onEdit={() => setEditing(inv)} onDelete={() => remove(inv)} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed text-center">
+          <FileDigit className="h-8 w-8 text-muted-foreground" />
+          <h3 className="text-xl font-bold">{invoices.length ? "ما فيه فواتير تطابق البحث" : "ما فيه فواتير للحين"}</h3>
+          {!invoices.length && <Button asChild><Link href="/tools/invoice-generator"><PlusCircle className="me-2 h-4 w-4" /> أول فاتورة</Link></Button>}
+        </div>
       )}
 
-      <div className="border rounded-lg shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                    checked={selectedRows.length > 0 && selectedRows.length === invoices.length}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="تحديد الكل"
-                 />
-              </TableHead>
-              <TableHead>العميل</TableHead>
-              <TableHead className="hidden md:table-cell">تاريخ الإصدار</TableHead>
-              <TableHead>المبلغ الإجمالي</TableHead>
-              <TableHead className="hidden sm:table-cell">الحالة</TableHead>
-              <TableHead className="w-16">الإجراءات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-5" /></TableCell>
-                        <TableCell>
-                            <Skeleton className="h-5 w-24 mb-1" />
-                            <Skeleton className="h-4 w-16" />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-16" /></TableCell>
-                    </TableRow>
-                ))
-            ) : invoices.length > 0 ? (
-                invoices.map(invoice => (
-                    <TableRow key={invoice.id} data-state={selectedRows.includes(invoice.id) && "selected"}>
-                        <TableCell>
-                            <Checkbox
-                                checked={selectedRows.includes(invoice.id)}
-                                onCheckedChange={() => handleSelectRow(invoice.id)}
-                                aria-label={`تحديد الفاتورة ${invoice.invoiceNumber}`}
-                            />
-                        </TableCell>
-                        <TableCell>
-                            <p className="font-medium hover:underline cursor-pointer" onClick={() => router.push(`/tools/invoice-generator?id=${invoice.id}`)}>
-                                {invoice.clientName}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{invoice.invoiceNumber}</p>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{format(parseISO(invoice.invoiceDate), "yyyy-MM-dd", { locale: ar })}</TableCell>
-                        <TableCell dir="ltr">{new Intl.NumberFormat('ar-SA').format(invoice.total)} <span className="saudi-riyal">&#xea;</span></TableCell>
-                        <TableCell className="hidden sm:table-cell">{getStatusBadge(invoice.status)}</TableCell>
-                        <TableCell>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">فتح القائمة</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleEditClick(invoice)}>
-                                        <Edit className="ml-2 h-4 w-4"/> تعديل
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteInvoice(invoice)} className="text-destructive">
-                                         <Trash2 className="ml-2 h-4 w-4" /> حذف
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                ))
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
-                        لا توجد فواتير محفوظة حاليًا.
-                    </TableCell>
-                </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {selectedInvoice && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <EditInvoiceDialog 
-                invoice={selectedInvoice}
-                onSave={fetchInvoices}
-                onClose={() => setIsDialogOpen(false)}
-            />
-        </Dialog>
-      )}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        {editing && <EditDialog key={editing.id} invoice={editing} onSaved={load} onClose={() => setEditing(null)} />}
+      </Dialog>
     </div>
   );
 }
