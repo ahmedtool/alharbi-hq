@@ -2,7 +2,7 @@
 
 import React from "react";
 import { db } from "@/lib/db";
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "@/lib/db";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "@/lib/db";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,15 @@ const today = () => new Date().toISOString().slice(0, 10);
 const addDays = (d: number) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
 const n = (x: number) => new Intl.NumberFormat("ar-SA").format(Math.round(x || 0));
 const fmtDate = (iso: string) => (iso ? new Date(iso + "T00:00:00").toLocaleDateString("ar-SA-u-nu-arab-ca-gregory", { day: "numeric", month: "long", year: "numeric" }) : "........");
+
+const addDaysFrom = (iso: string, d: number) => { const x = new Date(iso + "T00:00:00"); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
+/** The fields of a saved quote that a contract can be filled from. */
+interface QuoteData {
+  number?: string; projectId?: string; title?: string; intro?: string;
+  clientName?: string; clientCompany?: string; clientEmail?: string; clientPhone?: string;
+  items?: { title: string; details?: string; qty: number; price: number }[];
+  discount?: number; vat?: boolean; durationDays?: number;
+}
 
 const blank = (number: string): Contract => ({
   number, date: today(), status: "draft",
@@ -225,8 +234,35 @@ export default function ContractBuilderPage() {
   }, []);
 
   React.useEffect(() => {
-    load().then((list) => setC((cur) => (cur.id ? cur : { ...cur, number: nextNumber(list) }))).catch((e) => console.error(e));
-  }, [load]);
+    load().then(async (list) => {
+      setC((cur) => (cur.id ? cur : { ...cur, number: nextNumber(list) }));
+      // Opened from an accepted quote: fill the contract from it.
+      const quoteId = new URLSearchParams(window.location.search).get("quote");
+      if (!quoteId) return;
+      const snap = await getDoc(doc(db, "quotes", quoteId));
+      if (!snap.exists()) return;
+      const q = snap.data() as QuoteData;
+      const items = (q.items || []).filter((i) => i.title?.trim());
+      const net = Math.max(0, items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0) - (Number(q.discount) || 0));
+      const half = Math.round(net / 2);
+      setC((cur) => ({
+        ...cur,
+        projectId: q.projectId || "",
+        title: q.title || cur.title,
+        summary: q.intro && !q.intro.startsWith("شكرًا لاهتمامك") ? q.intro : "",
+        scope: items.length ? items.map((i) => (i.details ? `${i.title}: ${i.details.replace(/\n+/g, "، ")}` : i.title)) : cur.scope,
+        clientName: q.clientName || "", clientCompany: q.clientCompany || "",
+        clientEmail: q.clientEmail || "", clientPhone: q.clientPhone || "",
+        endDate: q.durationDays ? addDaysFrom(cur.startDate, q.durationDays) : cur.endDate,
+        installments: net ? [
+          { id: 1, amount: half, condition: "دفعة مقدمة عند توقيع العقد" },
+          { id: 2, amount: net - half, condition: "عند التسليم النهائي" },
+        ] : cur.installments,
+        vat: !!q.vat,
+      }));
+      toast({ title: `تعبّى العقد من عرض السعر ${q.number || ""}`.trim(), description: "راجع النطاق والدفعات قبل الإرسال." });
+    }).catch((e) => console.error(e));
+  }, [load, toast]);
 
   const set = <K extends keyof Contract>(key: K, value: Contract[K]) => setC((cur) => ({ ...cur, [key]: value }));
 

@@ -241,6 +241,11 @@ export function AppSidebar() {
                           </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={isActive('/tools/quote-builder')}>
+                              <Link href="/tools/quote-builder" prefetch={true}><FileText /> عروض الأسعار</Link>
+                          </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={isActive('/tools/contract-builder')}>
                               <Link href="/tools/contract-builder" prefetch={true}><FileJson /> اداة بناء العقود</Link>
                           </SidebarMenuSubButton>

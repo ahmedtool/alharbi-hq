@@ -34,6 +34,7 @@ export const navLinks = [
         { name: "إدارة الروابط العامة", href: "/tools-directory", icon: Library },
         { name: "اداة تسعير المنتجات", href: "/tools/pricing-calculator", icon: Calculator },
         { name: "اداة الفاتورة", href: "/tools/invoice-generator", icon: FileDigit },
+        { name: "عروض الأسعار", href: "/tools/quote-builder", icon: FileText },
         { name: "العقود", href: "/tools/contract-builder", icon: FileJson },
         { name: "تنبؤ المبيعات", href: "/tools/sales-forecasting", icon: TrendingUp },
         { name: "متتبع العادات", href: "/tools/habit-tracker", icon: Star },

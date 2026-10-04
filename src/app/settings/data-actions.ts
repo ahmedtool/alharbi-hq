@@ -30,6 +30,7 @@ const COLLECTIONS_TO_MANAGE = [
     'tools',
     'transactions',
     'contracts',
+    'quotes',
 ];
 
 // Fetches all data from specified collections
