@@ -30,7 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <DirectionProvider dir="rtl">
       <Body>{children}</Body>
       <RegisterServiceWorker />
-      {isClient && <Toaster />}
+      {isClient && <div className="no-print"><Toaster /></div>}
     </DirectionProvider>
   );
 }

@@ -142,3 +142,17 @@ button, a, [role="button"] { touch-action: manipulation; }
   .tab-bar, .tab-bar * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   body { overscroll-behavior-x: none; }
 }
+
+/* Contracts: printing / "Save as PDF" shows only the contract sheet */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff !important; }
+  .no-print, .tab-bar, [data-radix-toast-viewport] { display: none !important; }
+  .page-enter { animation: none !important; transform: none !important; }
+  .contract-page { padding: 0 !important; }
+  .contract-main { display: block !important; }
+  .contract-sheet { max-width: none !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .contract-sheet h2, .contract-sheet table, .contract-sheet tr { break-inside: avoid; }
+  .contract-sheet h2 { break-after: avoid; }
+  .contract-sheet .sign-block { break-inside: avoid; }
+}

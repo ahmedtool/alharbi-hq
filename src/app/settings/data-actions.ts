@@ -29,6 +29,7 @@ const COLLECTIONS_TO_MANAGE = [
     'tasks',
     'tools',
     'transactions',
+    'contracts',
 ];
 
 // Fetches all data from specified collections

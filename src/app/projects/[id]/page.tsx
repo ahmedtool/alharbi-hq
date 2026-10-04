@@ -18,7 +18,8 @@ import { format, parseISO, intervalToDuration } from 'date-fns';
 import { ar } from "date-fns/locale";
 import Link from 'next/link';
 
-import { kindOf, stageOf, daysUntil, deadlineText, sar, CLIENT_STAGES, type Project } from '../model';
+import { kindOf, stageOf, daysUntil, deadlineText, sar, computeProgress, CLIENT_STAGES, type Project } from '../model';
+import { belongsTo } from '../../tasks/model';
 import { cn } from '@/lib/utils';
 import { ExternalLink, Rocket, Target } from 'lucide-react';
 
@@ -36,6 +37,9 @@ interface Task {
     title: string;
     priority: 'high' | 'medium' | 'low';
     status: 'todo' | 'inprogress' | 'done';
+    project: string;
+    projectId?: string | null;
+    subTasks: { id: number; text: string; completed: boolean }[];
 }
 
 interface Transaction {
@@ -96,9 +100,8 @@ export default function ProjectDetailPage() {
             setInvoices(invoicesData);
 
             // Fetch related tasks
-            const tasksQuery = query(collection(db, 'tasks'), where('project', '==', projectData.name));
-            const tasksSnapshot = await getDocs(tasksQuery);
-            const tasksData = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+            const tasksSnapshot = await getDocs(collection(db, 'tasks'));
+            const tasksData = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)).filter(t => belongsTo(t, projectData));
             setTasks(tasksData);
             
             // Fetch related expenses by searching project name in description
@@ -189,7 +192,7 @@ export default function ProjectDetailPage() {
                 </Button>
             </PageHeader>
             <div className="space-y-8">
-                <ProjectOverview project={project} totalIncome={totalIncome} totalExpenses={totalExpenses} netProfit={netProfit} duration={projectDuration} />
+                <ProjectOverview project={project} progress={computeProgress(project, tasks)} totalIncome={totalIncome} totalExpenses={totalExpenses} netProfit={netProfit} duration={projectDuration} />
                 <div className={cn("grid gap-8", kindOf(project) === "client" && "lg:grid-cols-2")}>
                      {kindOf(project) === "client" && <Card>
                         <CardHeader>
@@ -274,8 +277,8 @@ export default function ProjectDetailPage() {
 
 
 /** Top of the project page: different figures for personal and client projects. */
-function ProjectOverview({ project, totalIncome, totalExpenses, netProfit, duration }: {
-    project: Project; totalIncome: number; totalExpenses: number; netProfit: number; duration: string;
+function ProjectOverview({ project, progress, totalIncome, totalExpenses, netProfit, duration }: {
+    project: Project; progress: number; totalIncome: number; totalExpenses: number; netProfit: number; duration: string;
 }) {
     const kind = kindOf(project);
     const stage = stageOf(project);
@@ -335,8 +338,9 @@ function ProjectOverview({ project, totalIncome, totalExpenses, netProfit, durat
 
             <div className="flex items-center gap-3 rounded-2xl border bg-card p-4">
                 <span className="text-sm font-semibold">الإنجاز</span>
-                <Progress value={Number(project.progress || 0)} className="flex-1" />
-                <span className="text-sm font-bold tabular-nums">{sar(project.progress || 0)}٪</span>
+                <Progress value={progress} className="flex-1" />
+                <span className="text-sm font-bold tabular-nums">{sar(progress)}٪</span>
+                <span className="text-xs text-muted-foreground">من المهام</span>
             </div>
         </section>
     );

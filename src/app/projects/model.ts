@@ -1,3 +1,5 @@
+import { belongsTo, taskFraction } from "../tasks/model";
+
 /**
  * Projects come in two kinds with different fields:
  * - personal: an idea or product built for myself (stage, goal, link, cost)
@@ -78,3 +80,15 @@ export const deadlineText = (days: number | null) => {
   if (days === 0) return { text: "التسليم اليوم", late: true };
   return { text: `باقي ${sar(days)} يوم`, late: false };
 };
+
+/**
+ * Progress is calculated, not typed in: the average completion of the
+ * project's tasks (a task with subtasks counts by how many are ticked).
+ * With no tasks yet it's 100% once delivered/launched, otherwise 0%.
+ */
+export const computeProgress = (p: Project, tasks: TaskLike[]) => {
+  const mine = tasks.filter((t) => belongsTo(t, p));
+  if (mine.length) return Math.round((mine.reduce((s, t) => s + taskFraction(t), 0) / mine.length) * 100);
+  return p.stage === "delivered" || p.stage === "launched" ? 100 : 0;
+};
+type TaskLike = Parameters<typeof taskFraction>[0] & Parameters<typeof belongsTo>[0];

@@ -10,15 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Briefcase, ExternalLink, MoreHorizontal, PlusCircle, Rocket, Target, UserPlus } from "lucide-react";
+import { ArrowRight, Briefcase, ExternalLink, ListChecks, MoreHorizontal, PlusCircle, Rocket, Target, UserPlus } from "lucide-react";
+import type { Task } from "../tasks/model";
 import {
-  CLIENT_STAGES, PERSONAL_CATEGORIES, PERSONAL_STAGES, daysUntil, deadlineText, kindOf, sar, stageOf,
+  CLIENT_STAGES, PERSONAL_CATEGORIES, PERSONAL_STAGES, computeProgress, daysUntil, deadlineText, kindOf, sar, stageOf,
   type ClientStage, type PersonalStage, type Project, type ProjectKind,
 } from "./model";
 
@@ -113,7 +113,6 @@ function ProjectForm({
   const [description, setDescription] = React.useState(project?.description ?? "");
   const [startDate, setStartDate] = React.useState(toDateInput(project?.startDate) || toDateInput(new Date().toISOString()));
   const [endDate, setEndDate] = React.useState(toDateInput(project?.endDate));
-  const [progress, setProgress] = React.useState(project?.progress ?? 0);
   const [budget, setBudget] = React.useState(project?.budget ?? 0);
   const [link, setLink] = React.useState(project?.link ?? "");
   // personal
@@ -152,7 +151,7 @@ function ProjectForm({
       const base = {
         kind, name: name.trim(), description: description.trim(),
         startDate: fromDateInput(startDate), endDate: fromDateInput(endDate),
-        progress: Number(progress), budget: Number(budget) || 0, link: link.trim(),
+        budget: Number(budget) || 0, link: link.trim(),
       };
       const data = kind === "personal"
         ? { ...base, stage: personalStage, goal: goal.trim(), category, clientId: null, clientName: null, amountPaid: 0 }
@@ -272,9 +271,10 @@ function ProjectForm({
           </>
         )}
 
-        <Field label={`نسبة الإنجاز: ${sar(progress)}٪`}>
-          <Slider min={0} max={100} step={5} value={[progress]} onValueChange={(v) => setProgress(v[0])} />
-        </Field>
+        <p className="flex items-center gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+          <ListChecks className="h-4 w-4 shrink-0" />
+          نسبة الإنجاز تنحسب تلقائيًا من مهام المشروع، كل ما أنجزت مهمة يتقدم المشروع.
+        </p>
       </div>
 
       <DialogFooter className="gap-2 sm:justify-between">
@@ -291,7 +291,7 @@ function ProjectForm({
 }
 
 /* Cards ------------------------------------------------------------------- */
-function ProjectCard({ project, onEdit, onDelete }: { project: Project; onEdit: () => void; onDelete: () => void }) {
+function ProjectCard({ project, progress, taskCount, onEdit, onDelete }: { project: Project; progress: number; taskCount: number; onEdit: () => void; onDelete: () => void }) {
   const router = useRouter();
   const kind = kindOf(project);
   const stage = stageOf(project);
@@ -349,8 +349,9 @@ function ProjectCard({ project, onEdit, onDelete }: { project: Project; onEdit: 
       )}
 
       <div className="mt-auto flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-foreground" style={{ width: `${project.progress || 0}%` }} /></div>
-        <span className="text-xs font-bold tabular-nums">{sar(project.progress || 0)}٪</span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-foreground transition-all" style={{ width: `${progress}%` }} /></div>
+        <span className="text-xs font-bold tabular-nums">{sar(progress)}٪</span>
+        <span className="text-[11px] text-muted-foreground">{taskCount ? `${sar(taskCount)} مهام` : "بدون مهام"}</span>
         {project.link && (
           <a href={project.link} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground" title="فتح الرابط">
             <ExternalLink className="h-4 w-4" />
@@ -368,6 +369,7 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [clients, setClients] = React.useState<Client[]>([]);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Project | null>(null);
@@ -376,9 +378,10 @@ export default function ProjectsPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const [ps, cs] = await Promise.all([getDocs(collection(db, "projects")), getDocs(collection(db, "clients"))]);
+      const [ps, cs, ts] = await Promise.all([getDocs(collection(db, "projects")), getDocs(collection(db, "clients")), getDocs(collection(db, "tasks"))]);
       setProjects(ps.docs.map((d) => ({ id: d.id, ...d.data() } as Project)));
       setClients(cs.docs.map((d) => ({ id: d.id, ...d.data() } as Client)));
+      setTasks(ts.docs.map((d) => ({ id: d.id, ...d.data() } as Task)));
     } catch (e) {
       console.error(e);
       toast({ variant: "destructive", title: "حدث خطأ أثناء جلب البيانات." });
@@ -465,7 +468,7 @@ export default function ProjectsPage() {
       ) : shown.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((p) => (
-            <ProjectCard key={p.id} project={p} onEdit={() => { setEditing(p); setOpen(true); }} onDelete={() => remove(p)} />
+            <ProjectCard key={p.id} project={p} progress={computeProgress(p, tasks)} taskCount={tasks.filter((t) => (t.projectId ? t.projectId === p.id : t.project === p.name)).length} onEdit={() => { setEditing(p); setOpen(true); }} onDelete={() => remove(p)} />
           ))}
         </div>
       ) : (
