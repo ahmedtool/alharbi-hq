@@ -305,7 +305,7 @@ function ProjectOverview({ project, totalIncome, totalExpenses, netProfit, durat
                 </span>
                 <span className={cn("rounded-full px-3 py-1 text-sm font-bold", stage.tone)}>{stage.label}</span>
                 {kind === "client" && project.clientName && (
-                    <Link href="/clients" className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm hover:border-foreground">
+                    <Link href={project.clientId ? `/clients/${project.clientId}` : "/clients"} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm hover:border-foreground">
                         <Users className="h-4 w-4" /> {project.clientName}
                     </Link>
                 )}
