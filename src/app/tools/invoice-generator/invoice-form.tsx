@@ -233,6 +233,7 @@ export function InvoiceForm() {
   // Open ?id=<invoice>, fill from ?quote=<quote>, or start a fresh numbered invoice.
   const idParam = params.get("id");
   const quoteParam = params.get("quote");
+  const productParam = params.get("product");
   React.useEffect(() => {
     (async () => {
       const list = await load();
@@ -258,9 +259,17 @@ export function InvoiceForm() {
           return;
         }
       }
+      if (productParam) {
+        const snap = await getDoc(doc(db, "products", productParam));
+        if (snap.exists()) {
+          const pr = snap.data() as Product;
+          setV({ ...fresh, lineItems: [{ id: 1, description: pr.description ? `${pr.name}\n${pr.description}` : pr.name, quantity: 1, price: Number(pr.price) || 0 }] });
+          return;
+        }
+      }
       setV(fresh);
     })().catch((e) => console.error(e));
-  }, [load, idParam, quoteParam, toast]);
+  }, [load, idParam, quoteParam, productParam, toast]);
 
   const set = <K extends keyof Invoice>(key: K, value: Invoice[K]) => setV((cur) => ({ ...cur, [key]: value }));
   const setItem = (id: number, patch: Partial<LineItem>) => set("lineItems", v.lineItems.map((x) => (x.id === id ? { ...x, ...patch } : x)));
