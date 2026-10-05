@@ -53,6 +53,7 @@ interface Invoice {
   notes: string;
   internalNotes: string;
   total?: number;
+  paidAt?: string | null;
 }
 interface QuoteData {
   number?: string; projectId?: string; title?: string;
@@ -350,7 +351,8 @@ export function InvoiceForm() {
       const t = totals(v);
       const { id: existing, total: _old, ...rest } = v;
       const id = existing || doc(collection(db, "invoices")).id;
-      await setDoc(doc(db, "invoices", id), { ...rest, projectId: v.projectId || null, subtotal: t.subtotal, vatAmount: t.vat, total: t.total });
+      const paidAt = v.status === "paid" ? (v.paidAt || new Date().toISOString()) : null;
+      await setDoc(doc(db, "invoices", id), { ...rest, projectId: v.projectId || null, subtotal: t.subtotal, vatAmount: t.vat, total: t.total, paidAt });
       setV((cur) => ({ ...cur, id }));
 
       // Paid invoices count as income in finance.
