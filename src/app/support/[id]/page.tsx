@@ -1,457 +1,302 @@
-
 "use client";
 
 import * as React from "react";
-import { useParams, useRouter } from 'next/navigation';
-import { db } from "@/lib/db";
-import { collection, doc, getDoc, updateDoc, query, orderBy, Timestamp, getDocs, addDoc, setDoc, where, limit, deleteDoc, writeBatch } from "@/lib/db";
-import { PageHeader } from "@/components/app/page-header";
-import { Button } from "@/components/ui/button";
-import { Loader2, Package, FileText, CheckCircle, Trash2, ArrowRight } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardTitle, CardHeader, CardFooter } from "@/components/ui/card";
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { db } from "@/lib/db";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, Timestamp, updateDoc, where, writeBatch } from "@/lib/db";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { ArrowRight, CheckCircle, Copy, FileText, Loader2, Mail, MessageCircle, MoreHorizontal, Package, Paperclip, Phone, Send, Trash2, UserPlus } from "lucide-react";
+import { waNumber } from "@/app/clients/model";
+import { CATEGORY, STATUS, initialsOf, relTime, toDate, type Message, type Ticket, type TicketStatus } from "../model";
 
+const QUICK_REPLIES = [
+  "أهلًا {name}، استلمت طلبك وبرجع لك بالتفاصيل خلال يوم عمل.",
+  "شكرًا لتواصلك! ممكن توضح لي أكثر وش المطلوب بالضبط؟",
+  "جهّزت لك عرض السعر، بيوصلك على الإيميل الحين.",
+  "تم الانتهاء من طلبك ✅ إذا عندك أي ملاحظة أنا حاضر.",
+];
 
-interface Ticket {
-    id: string;
-    ticketId: string;
-    customerName: string;
-    customerEmail: string;
-    customerPhone?: string;
-    category: string;
-    subject: string;
-    productDetails?: { name: string, price: number } | null;
-    fileUrls?: string[];
-    status: 'new' | 'in-progress' | 'closed';
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-}
-
-interface Message {
-    id: string;
-    text: string;
-    sender: 'customer' | 'support';
-    createdAt: Timestamp;
-}
-
-const categoryMap: { [key: string]: string } = {
-    'project-request': 'طلب مشروع',
-    'service-request': 'طلب خدمة/منتج',
-    'custom-request': 'طلب خدمة مخصصة',
-    'quote-request': 'طلب تسعيرة',
-    'collaboration': 'تعاون مشترك',
-    'job-inquiry': 'بحث عن عمل',
-    'other': 'غيرها',
+const nextInvoiceNumber = async () => {
+  const s = await getDocs(query(collection(db, "invoices"), orderBy("invoiceNumber", "desc"), limit(1)));
+  if (s.empty) return "INV-001";
+  const last = parseInt(String(s.docs[0].data().invoiceNumber || "").split("-").pop() || "0", 10) || 0;
+  return `INV-${String(last + 1).padStart(3, "0")}`;
 };
 
-const generateInvoiceNumber = async () => {
-    const q = query(collection(db, "invoices"), orderBy("invoiceNumber", "desc"), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return "INV-001";
+export default function TicketPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { toast } = useToast();
+  const bottom = React.useRef<HTMLDivElement>(null);
+
+  const [ticket, setTicket] = React.useState<Ticket | null>(null);
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [reply, setReply] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const [confirm, setConfirm] = React.useState<"delete" | "sale" | null>(null);
+  const [busy, setBusy] = React.useState(false);
+
+  const load = React.useCallback(async () => {
+    if (!id) return;
+    try {
+      const snap = await getDoc(doc(db, "support_tickets", id));
+      if (!snap.exists()) { toast({ variant: "destructive", title: "الطلب غير موجود" }); router.push("/support"); return; }
+      setTicket({ ...(snap.data() as Omit<Ticket, "id">), id: snap.id });
+      const ms = await getDocs(query(collection(db, `support_tickets/${id}/messages`), orderBy("createdAt", "asc")));
+      setMessages(ms.docs.map((d) => ({ ...(d.data() as Omit<Message, "id">), id: d.id })));
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نجيب الطلب" });
+    } finally {
+      setLoading(false);
     }
-    const lastInvoice = querySnapshot.docs[0].data();
-    const lastNumber = parseInt(lastInvoice.invoiceNumber.split('-')[1], 10);
-    const newNumber = (lastNumber + 1).toString().padStart(3, '0');
-    return `INV-${newNumber}`;
-}
+  }, [id, toast, router]);
 
-export default function TicketDetailsPage() {
-    const params = useParams();
-    const router = useRouter();
-    const { id: ticketId } = params;
-    const { toast } = useToast();
+  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => { bottom.current?.scrollIntoView({ block: "end" }); }, [messages.length]);
 
-    const [ticket, setTicket] = React.useState<Ticket | null>(null);
-    const [messages, setMessages] = React.useState<Message[]>([]);
-    const [reply, setReply] = React.useState("");
-    const [isLoading, setIsLoading] = React.useState(true);
-    const [isSending, setIsSending] = React.useState(false);
-    const [isDeleting, setIsDeleting] = React.useState(false);
-    const [isClient, setIsClient] = React.useState(false);
-    
-    React.useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    const fetchTicketAndMessages = React.useCallback(async () => {
-         if (!ticketId) return;
-        setIsLoading(true);
-        try {
-            const ticketDoc = await getDoc(doc(db, "support_tickets", ticketId as string));
-            if (!ticketDoc.exists()) {
-                toast({ variant: "destructive", title: "التذكرة غير موجودة." });
-                router.push('/support');
-                return;
-            }
-            setTicket({ id: ticketDoc.id, ...ticketDoc.data() } as Ticket);
-
-            const messagesQuery = query(collection(db, `support_tickets/${ticketId}/messages`), orderBy("createdAt", "asc"));
-            const messagesSnapshot = await getDocs(messagesQuery);
-            const messagesData = messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
-            setMessages(messagesData);
-        } catch (error) {
-            toast({ variant: "destructive", title: "خطأ في جلب بيانات التذكرة" });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [ticketId, toast, router]);
-
-    React.useEffect(() => {
-        fetchTicketAndMessages();
-    }, [fetchTicketAndMessages]);
-
-    const handleSendReply = async () => {
-        if (!ticket || !reply.trim()) return;
-        setIsSending(true);
-        try {
-            await addDoc(collection(db, `support_tickets/${ticket.id}/messages`), {
-                text: reply,
-                sender: 'support',
-                createdAt: Timestamp.now(),
-            });
-
-            await updateDoc(doc(db, "support_tickets", ticket.id), {
-                updatedAt: Timestamp.now(),
-            });
-
-            toast({ title: "تم إرسال الرد بنجاح وحفظه في السجل." });
-
-            setReply("");
-            fetchTicketAndMessages();
-
-        } catch (error) {
-             toast({ variant: "destructive", title: "خطأ في إرسال الرد" });
-             console.error(error);
-        } finally {
-            setIsSending(false);
-        }
-    };
-    
-    const handleStatusChange = async (status: Ticket['status']) => {
-        if (!ticket) return;
-        try {
-            await updateDoc(doc(db, "support_tickets", ticket.id), { status, updatedAt: Timestamp.now() });
-            toast({ title: "تم تحديث حالة التذكرة." });
-            setTicket(prev => prev ? {...prev, status} : null);
-        } catch(error) {
-            toast({ variant: "destructive", title: "خطأ في تحديث الحالة." });
-        }
-    };
-    
-    const handleDeleteTicket = async () => {
-        if (!ticket) return;
-        setIsDeleting(true);
-        try {
-            const messagesQuery = query(collection(db, `support_tickets/${ticket.id}/messages`));
-            const messagesSnapshot = await getDocs(messagesQuery);
-            const batch = writeBatch(db);
-            messagesSnapshot.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-
-            await deleteDoc(doc(db, "support_tickets", ticket.id));
-            
-            toast({ title: "تم حذف التذكرة بنجاح" });
-            router.push('/support');
-
-        } catch (error) {
-            console.error("Error deleting ticket:", error);
-            toast({ variant: "destructive", title: "خطأ في حذف التذكرة." });
-            setIsDeleting(false);
-        }
+  const send = async () => {
+    if (!ticket || !reply.trim()) return;
+    setSending(true);
+    try {
+      await addDoc(collection(db, `support_tickets/${ticket.id}/messages`), { text: reply.trim(), sender: "support", createdAt: Timestamp.now() });
+      const status: TicketStatus = ticket.status === "new" ? "in-progress" : ticket.status;
+      await updateDoc(doc(db, "support_tickets", ticket.id), { updatedAt: Timestamp.now(), status });
+      setReply("");
+      setTicket((t) => (t ? { ...t, status } : t));
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما انرسل الرد" });
+    } finally {
+      setSending(false);
     }
+  };
 
+  const setStatus = async (status: TicketStatus) => {
+    if (!ticket) return;
+    setTicket({ ...ticket, status });
+    try { await updateDoc(doc(db, "support_tickets", ticket.id), { status, updatedAt: Timestamp.now() }); }
+    catch (e) { console.error(e); toast({ variant: "destructive", title: "ما قدرنا نحدّث الحالة" }); load(); }
+  };
 
-    const handleConfirmSale = async () => {
-        if (!ticket || !ticket.productDetails) return;
-        
-        setIsSending(true);
-        toast({title: "جاري تأكيد البيع..."});
-
-        try {
-            const invoiceNumber = await generateInvoiceNumber();
-            const today = new Date();
-            const dueDate = new Date();
-            dueDate.setDate(today.getDate() + 14);
-
-            const invoiceId = `inv_${ticket.id}`;
-            const invoiceData = {
-                id: invoiceId,
-                invoiceNumber: invoiceNumber,
-                clientName: ticket.customerName,
-                total: ticket.productDetails.price,
-                invoiceDate: today.toISOString().split('T')[0],
-                dueDate: dueDate.toISOString().split('T')[0],
-                status: "paid",
-                paymentMethod: "متجر سلة",
-                internalNotes: `تم إنشاؤها تلقائيًا من طلب الدعم #${ticket.ticketId}`,
-                yourDetails: "أحمد الحربي\nمطور ويب مستقل\nالرياض، المملكة العربية السعودية\nahmed@example.com",
-                clientCompany: "",
-                lineItems: [{
-                    id: 1,
-                    description: ticket.productDetails.name,
-                    quantity: 1,
-                    price: ticket.productDetails.price,
-                }],
-                subtotal: ticket.productDetails.price,
-            };
-            await setDoc(doc(db, "invoices", invoiceId), invoiceData);
-            toast({title: "تم إنشاء الفاتورة بنجاح", description: `رقم الفاتورة: ${invoiceNumber}`});
-
-            const transactionId = `inv_${invoiceId}`;
-            await setDoc(doc(db, "transactions", transactionId), {
-                id: transactionId,
-                description: `دخل من الفاتورة #${invoiceNumber}`,
-                amount: ticket.productDetails.price,
-                type: 'income',
-                category: 'دخل فواتير',
-                date: new Date().toISOString()
-            });
-            toast({title: "تم تسجيل معاملة الدخل بنجاح"});
-
-            await updateDoc(doc(db, "support_tickets", ticket.id), { 
-                status: 'closed',
-                updatedAt: Timestamp.now() 
-            });
-            toast({title: "تم إغلاق التذكرة"});
-            
-            fetchTicketAndMessages();
-            router.push('/finance/invoices');
-
-        } catch (error) {
-            console.error("Error confirming sale:", error);
-            toast({ variant: "destructive", title: "خطأ في عملية تأكيد البيع." });
-        } finally {
-            setIsSending(false);
-        }
-    };
-
-
-    if (isLoading) {
-        return (
-             <div className="p-4 sm:p-6 lg:p-8 space-y-4">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-6 w-1/2" />
-                <Card>
-                    <CardContent className="p-6 space-y-4">
-                         <Skeleton className="h-20 w-full" />
-                         <Skeleton className="h-40 w-full" />
-                         <Skeleton className="h-24 w-full" />
-                    </CardContent>
-                </Card>
-            </div>
-        )
+  const remove = async () => {
+    if (!ticket) return;
+    setBusy(true);
+    try {
+      const ms = await getDocs(query(collection(db, `support_tickets/${ticket.id}/messages`)));
+      const batch = writeBatch(db);
+      ms.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      await deleteDoc(doc(db, "support_tickets", ticket.id));
+      toast({ title: "انحذف الطلب" });
+      router.push("/support");
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نحذف" });
+      setBusy(false);
     }
+  };
 
-    if (!ticket) {
-        return (
-            <div className="p-4 sm:p-6 lg:p-8 text-center">
-                <p>لم يتم العثور على التذكرة.</p>
-                <Button asChild variant="link">
-                    <Link href="/support">
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                        العودة للدعم الفني
-                    </Link>
-                </Button>
-            </div>
-        )
+  /** Product order: create a paid invoice + income, then close the ticket. */
+  const confirmSale = async () => {
+    if (!ticket?.productDetails) return;
+    setBusy(true);
+    try {
+      const invoiceNumber = await nextInvoiceNumber();
+      const today = new Date();
+      const due = new Date(); due.setDate(today.getDate() + 14);
+      const invoiceId = `inv_${ticket.id}`;
+      const price = Number(ticket.productDetails.price) || 0;
+      await setDoc(doc(db, "invoices", invoiceId), {
+        invoiceNumber, clientName: ticket.customerName, clientEmail: ticket.customerEmail || "", clientPhone: ticket.customerPhone || "", clientCompany: "",
+        invoiceDate: today.toISOString().slice(0, 10), dueDate: due.toISOString().slice(0, 10), status: "paid", paidAt: today.toISOString(),
+        paymentMethod: "متجر سلة", internalNotes: `من طلب الدعم #${ticket.ticketId}`,
+        yourDetails: "أحمد الحربي\nالمطوّر\nالرياض، المملكة العربية السعودية\nhi@ahmedalharbi.com",
+        lineItems: [{ id: 1, description: ticket.productDetails.name, quantity: 1, price }],
+        subtotal: price, total: price, notes: "شكرًا لتعاملكم معنا.",
+      });
+      await setDoc(doc(db, "transactions", `inv_${invoiceId}`), { id: `inv_${invoiceId}`, description: `دخل من الفاتورة #${invoiceNumber}`, amount: price, type: "income", category: "دخل فواتير", date: today.toISOString() });
+      await updateDoc(doc(db, "support_tickets", ticket.id), { status: "closed", updatedAt: Timestamp.now() });
+      toast({ title: "تأكد البيع", description: `انعملت الفاتورة ${invoiceNumber} وتسكّر الطلب.` });
+      router.push(`/tools/invoice-generator?id=${invoiceId}`);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما قدرنا نأكد البيع" });
+      setBusy(false);
     }
+  };
 
-    const canConfirmSale = ticket.category === 'service-request' && ticket.productDetails && ticket.status !== 'closed';
+  const addAsClient = async () => {
+    if (!ticket) return;
+    try {
+      if (ticket.customerEmail) {
+        const existing = await getDocs(query(collection(db, "clients"), where("email", "==", ticket.customerEmail), limit(1)));
+        if (!existing.empty) { router.push(`/clients/${existing.docs[0].id}`); return; }
+      }
+      const ref = await addDoc(collection(db, "clients"), {
+        kind: "individual", name: ticket.customerName, email: ticket.customerEmail || "", phone: ticket.customerPhone || "",
+        source: "الموقع", notes: `من طلب الدعم #${ticket.ticketId}: ${ticket.subject}`,
+      });
+      toast({ title: "انضاف للعملاء" });
+      router.push(`/clients/${ref.id}`);
+    } catch (e) { console.error(e); toast({ variant: "destructive", title: "ما قدرنا نضيفه" }); }
+  };
 
+  if (loading) {
     return (
-         <div className="p-4 sm:p-6 lg:p-8 text-right">
-            <PageHeader title={`طلب #${ticket.ticketId}`} description={ticket.subject}>
-                 <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={isDeleting}>
-                            <Trash2 className="ml-2 h-4 w-4" /> حذف التذكرة
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                سيتم حذف هذه التذكرة وجميع الرسائل المتعلقة بها بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteTicket} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                               {isDeleting ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : "نعم، حذف"}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                 <Button asChild variant="outline">
-                    <Link href="/support">
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                        العودة لكل الطلبات
-                    </Link>
-                </Button>
-            </PageHeader>
-            <main className="grid gap-8 md:grid-cols-3 items-start">
-                <div className="md:col-span-2 space-y-6">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>سجل المحادثة</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-h-[60vh] flex flex-col gap-4">
-                                 <div className="flex-1 overflow-y-auto p-4 bg-muted/50 rounded-md space-y-4">
-                                    {messages.map(msg => (
-                                        <div key={msg.id} className={`flex flex-col ${msg.sender === 'support' ? 'items-end' : 'items-start'}`}>
-                                            <div className={`max-w-lg rounded-lg p-3 text-sm ${msg.sender === 'support' ? 'bg-primary text-primary-foreground' : 'bg-background border'}`}>
-                                                <p className="whitespace-pre-wrap">{msg.text}</p>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {isClient ? formatDistanceToNow(msg.createdAt.toDate(), { addSuffix: true, locale: ar }) : '...'}
-                                            </p>
-                                        </div>
-                                    ))}
-                                    {messages.length === 0 && (
-                                        <p className="text-center text-muted-foreground py-8">لا توجد رسائل في هذه المحادثة.</p>
-                                    )}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>الرد على الطلب</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <Textarea 
-                                placeholder="اكتب ردك هنا..."
-                                rows={6}
-                                value={reply}
-                                onChange={(e) => setReply(e.target.value)}
-                                disabled={isSending}
-                            />
-                        </CardContent>
-                        <CardFooter className="justify-end">
-                            <Button onClick={handleSendReply} disabled={isSending || !reply.trim()}>
-                                {isSending && <Loader2 className="ml-2 h-4 w-4 animate-spin"/>}
-                                إرسال الرد
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
-                <aside className="space-y-6 md:col-span-1">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>تفاصيل العميل</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                           <p><span className="font-semibold">الاسم:</span> {ticket.customerName}</p>
-                           <p><span className="font-semibold">البريد:</span> {ticket.customerEmail}</p>
-                           {ticket.customerPhone && <p><span className="font-semibold">الجوال:</span> {ticket.customerPhone}</p>}
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>تفاصيل الطلب</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                             <div className="space-y-1">
-                                <Label>حالة الطلب</Label>
-                                 <Select 
-                                    value={ticket.status}
-                                    onValueChange={(status) => handleStatusChange(status as Ticket['status'])}
-                                 >
-                                    <SelectTrigger>
-                                        <SelectValue/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="new">جديد</SelectItem>
-                                        <SelectItem value="in-progress">قيد المعالجة</SelectItem>
-                                        <SelectItem value="closed">مغلق</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                             </div>
-                             <p className="text-sm"><span className="font-semibold">التصنيف:</span> {categoryMap[ticket.category] || ticket.category}</p>
-                             
-                              {ticket.productDetails && (
-                                <div className="rounded-md border p-3 text-sm">
-                                    <h4 className="font-semibold mb-2 flex items-center gap-2"><Package className="h-4 w-4"/>المنتج/الخدمة المطلوبة</h4>
-                                    <p><span className="text-muted-foreground">الاسم:</span> {ticket.productDetails.name}</p>
-                                    <p><span className="text-muted-foreground">السعر:</span> {ticket.productDetails.price.toFixed(2)} ر.س</p>
-                                </div>
-                            )}
+      <div className="space-y-4 p-4 sm:p-6 lg:p-8">
+        <Skeleton className="h-10 w-1/3" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"><Skeleton className="h-[60vh] rounded-2xl" /><Skeleton className="h-80 rounded-2xl" /></div>
+      </div>
+    );
+  }
+  if (!ticket) return null;
 
-                            {ticket.fileUrls && ticket.fileUrls.length > 0 && (
-                                <div className="space-y-2 pt-2">
-                                    <h4 className="font-semibold text-sm">المرفقات:</h4>
-                                    <div className="flex flex-col gap-2">
-                                        {ticket.fileUrls.map((url, index) => (
-                                            <a href={url} target="_blank" rel="noopener noreferrer" key={index} className="text-sm">
-                                                <Button variant="outline" size="sm" className="w-full justify-start">
-                                                    <FileText className="ml-2 h-4 w-4"/>
-                                                    ملف {index + 1}
-                                                </Button>
-                                            </a>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                        {canConfirmSale && (
-                            <CardFooter>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button className="w-full" variant="secondary" disabled={isSending}>
-                                            <CheckCircle className="ml-2 h-4 w-4" />
-                                            تأكيد البيع وإنشاء فاتورة
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                سيؤدي هذا الإجراء إلى:
-                                                <ul className="list-disc pr-5 mt-2 space-y-1">
-                                                    <li>إنشاء فاتورة مدفوعة بقيمة {ticket.productDetails?.price.toFixed(2)} ر.س</li>
-                                                    <li>تسجيل معاملة دخل جديدة بنفس القيمة.</li>
-                                                    <li>إغلاق هذه التذكرة.</li>
-                                                </ul>
-                                                 لا يمكن التراجع عن هذا الإجراء.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleConfirmSale}>نعم، تأكيد البيع</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </CardFooter>
-                        )}
-                    </Card>
-                </aside>
-            </main>
+  const st = STATUS[ticket.status] ?? STATUS.new;
+  const wa = waNumber(ticket.customerPhone);
+  const first = ticket.customerName?.split(/\s+/)[0] || "";
+  const canSell = ticket.category === "service-request" && !!ticket.productDetails && ticket.status !== "closed";
+  const created = toDate(ticket.createdAt);
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 text-right">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-start gap-3 border-b pb-5">
+        <Button variant="outline" size="icon" asChild className="shrink-0 rounded-full"><Link href="/support" aria-label="رجوع"><ArrowRight className="h-4 w-4" /></Link></Button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold md:text-3xl">{ticket.subject || "بدون موضوع"}</h1>
+            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-bold", st.tone)}>{st.label}</span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span dir="ltr">#{ticket.ticketId}</span> · {CATEGORY[ticket.category] ?? ticket.category}{created ? ` · ${created.toLocaleDateString("ar-SA-u-nu-arab-ca-gregory", { day: "numeric", month: "long" })}` : ""}
+          </p>
         </div>
-    )
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="rounded-full"><span className="sr-only">خيارات</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={addAsClient}><UserPlus className="me-2 h-4 w-4" /> أضفه كعميل</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(ticket.ticketId); toast({ title: "انسخ رقم الطلب" }); }}><Copy className="me-2 h-4 w-4" /> نسخ رقم الطلب</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setConfirm("delete")} className="text-destructive"><Trash2 className="me-2 h-4 w-4" /> حذف الطلب</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Conversation */}
+        <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card">
+          <div className="max-h-[60dvh] min-h-[280px] flex-1 space-y-4 overflow-y-auto bg-muted/30 p-4 sm:p-5">
+            {messages.length ? messages.map((m) => {
+              const mine = m.sender === "support";
+              return (
+                <div key={m.id} className={cn("flex items-end gap-2", mine ? "flex-row-reverse" : "")}>
+                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold", mine ? "bg-foreground text-background" : "bg-background border")}>{mine ? "أ" : initialsOf(ticket.customerName)}</span>
+                  <div className={cn("max-w-[80%] space-y-1", mine && "items-end text-left")}>
+                    <div className={cn("whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm text-right", mine ? "rounded-be-md bg-foreground text-background" : "rounded-bs-md border bg-background")}>{m.text}</div>
+                    <p className={cn("px-1 text-[11px] text-muted-foreground", mine ? "text-left" : "text-right")}>{mine ? "أنت" : first} · {relTime(m.createdAt)}</p>
+                  </div>
+                </div>
+              );
+            }) : <p className="py-16 text-center text-sm text-muted-foreground">ما فيه رسائل للحين. ابدأ بالرد تحت.</p>}
+            <div ref={bottom} />
+          </div>
+
+          {/* Composer */}
+          <div className="space-y-3 border-t p-3 sm:p-4">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {QUICK_REPLIES.map((r) => (
+                <button key={r} type="button" onClick={() => setReply(r.replace("{name}", first))} className="max-w-[16rem] shrink-0 truncate rounded-full border px-3 py-1 text-xs text-muted-foreground hover:border-foreground hover:text-foreground">{r.replace("{name}", first)}</button>
+              ))}
+            </div>
+            <div className="flex items-end gap-2">
+              <Textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={2} placeholder="اكتب ردك…" className="min-h-[44px] resize-none"
+                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }} disabled={sending} />
+              <Button onClick={send} disabled={sending || !reply.trim()} className="h-11 shrink-0">{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 rtl:-scale-x-100" />}<span className="ms-2 hidden sm:inline">إرسال</span></Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">الرد ينحفظ في سجل الطلب. للتواصل المباشر استخدم الإيميل أو الواتساب من بطاقة العميل.</p>
+          </div>
+        </section>
+
+        {/* Side */}
+        <aside className="space-y-4">
+          <section className="rounded-2xl border bg-card p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-muted text-sm font-bold">{initialsOf(ticket.customerName)}</span>
+              <div className="min-w-0"><p className="truncate font-bold">{ticket.customerName}</p><p className="text-xs text-muted-foreground">العميل</p></div>
+            </div>
+            <div className="space-y-2 text-sm">
+              {ticket.customerEmail && <a href={`mailto:${ticket.customerEmail}?subject=${encodeURIComponent(`بخصوص طلبك #${ticket.ticketId}`)}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted"><Mail className="h-4 w-4 text-muted-foreground" /><span className="truncate" dir="ltr">{ticket.customerEmail}</span></a>}
+              {ticket.customerPhone && <a href={`tel:${ticket.customerPhone}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted"><Phone className="h-4 w-4 text-muted-foreground" /><span dir="ltr">{ticket.customerPhone}</span></a>}
+            </div>
+            {wa && (
+              <Button asChild variant="outline" className="mt-3 w-full"><a href={`https://wa.me/${wa}?text=${encodeURIComponent(`أهلًا ${first}، بخصوص طلبك #${ticket.ticketId}: `)}`} target="_blank" rel="noopener"><MessageCircle className="me-2 h-4 w-4" /> واتساب</a></Button>
+            )}
+          </section>
+
+          <section className="rounded-2xl border bg-card p-4">
+            <p className="mb-2 text-xs font-bold text-muted-foreground">الحالة</p>
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+              {(Object.keys(STATUS) as TicketStatus[]).map((s) => (
+                <button key={s} type="button" onClick={() => setStatus(s)} className={cn("rounded-lg px-2 py-1.5 text-xs font-semibold", ticket.status === s ? "bg-background shadow-sm" : "text-muted-foreground")}>{STATUS[s].label}</button>
+              ))}
+            </div>
+          </section>
+
+          {ticket.productDetails && (
+            <section className="rounded-2xl border bg-card p-4">
+              <p className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground"><Package className="h-4 w-4" /> المطلوب</p>
+              <p className="font-bold">{ticket.productDetails.name}</p>
+              <p className="text-2xl font-bold">{new Intl.NumberFormat("ar-SA").format(Number(ticket.productDetails.price) || 0)} <span className="saudi-riyal text-base">&#xea;</span></p>
+              {canSell && <Button className="mt-3 w-full" onClick={() => setConfirm("sale")} disabled={busy}><CheckCircle className="me-2 h-4 w-4" /> تأكيد البيع وإصدار فاتورة</Button>}
+            </section>
+          )}
+
+          {!!ticket.fileUrls?.length && (
+            <section className="rounded-2xl border bg-card p-4">
+              <p className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground"><Paperclip className="h-4 w-4" /> المرفقات ({new Intl.NumberFormat("ar-SA").format(ticket.fileUrls.length)})</p>
+              <div className="grid grid-cols-3 gap-2">
+                {ticket.fileUrls.map((url, i) => (
+                  <a key={url} href={url} target="_blank" rel="noopener" className="group aspect-square overflow-hidden rounded-xl border bg-muted">
+                    {/\.(png|jpe?g|gif|webp)(\?|$)/i.test(url)
+                      ? <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      : <span className="grid h-full place-items-center text-xs text-muted-foreground"><FileText className="mb-1 h-5 w-5" />ملف {new Intl.NumberFormat("ar-SA").format(i + 1)}</span>}
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
+      </div>
+
+      <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirm === "delete" ? "حذف الطلب؟" : "تأكيد البيع؟"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "delete"
+                ? "بينحذف الطلب وكل رسائله، وما تقدر ترجعه."
+                : `بتنعمل فاتورة مدفوعة بـ ${new Intl.NumberFormat("ar-SA").format(Number(ticket.productDetails?.price) || 0)} ريال، وتنسجل دخل، ويتسكّر الطلب.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={confirm === "delete" ? remove : confirmSale} className={confirm === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}>
+              {busy && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{confirm === "delete" ? "احذف" : "أكّد"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
