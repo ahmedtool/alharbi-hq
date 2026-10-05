@@ -21,6 +21,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   LayoutDashboard,
+  BarChart3,
   CheckCircle2,
   Briefcase,
   Code,
@@ -205,6 +206,11 @@ export function AppSidebar() {
                        <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={isActive('/finance/products')}>
                               <Link href="/finance/products" prefetch={true}><Package className="w-4 h-4" /> المنتجات والخدمات</Link>
+                          </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={isActive('/finance/reports')}>
+                              <Link href="/finance/reports" prefetch={true}><BarChart3 className="w-4 h-4" /> التقارير</Link>
                           </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                   </SidebarMenuSub>

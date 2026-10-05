@@ -1,7 +1,7 @@
 import {
   CheckCircle2, Briefcase, Code, DollarSign, Lightbulb, Settings, FileText, Users, FileDigit,
   FileJson, Repeat, Package, Calculator, Star, TrendingUp, LifeBuoy, MessageCircle, Library,
-  Link2, Hash, LayoutGrid, Send,
+  Link2, Hash, LayoutGrid, Send, BarChart3,
 } from "lucide-react";
 
 /** Every dashboard section, grouped as on the dashboard page and in the mobile "more" sheet. */
@@ -26,6 +26,7 @@ export const navLinks = [
       { name: "الفواتير", href: "/finance/invoices", icon: FileDigit },
       { name: "الاشتراكات", href: "/finance/subscriptions", icon: Repeat },
       { name: "المنتجات والخدمات", href: "/finance/products", icon: Package },
+      { name: "التقارير", href: "/finance/reports", icon: BarChart3 },
     ]
   },
   {
