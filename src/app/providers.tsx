@@ -4,6 +4,7 @@ import React from "react";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { Toaster } from "@/components/ui/toaster";
 import { RegisterServiceWorker } from "@/components/app/register-sw";
+import { TitleBar } from "@/components/app/title-bar";
 import useClient from "@/hooks/use-client";
 import Body from "./body";
 
@@ -28,6 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     // الموقع عربي: كل مكونات Radix (القوائم، الاختيارات، التمرير...) تشتغل من اليمين لليسار
     <DirectionProvider dir="rtl">
+      <TitleBar />
       <Body>{children}</Body>
       <RegisterServiceWorker />
       {isClient && <div className="no-print"><Toaster /></div>}

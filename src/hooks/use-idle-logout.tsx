@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 import { auth, signOut } from '@/lib/auth';
+import { isInstalledApp } from '@/lib/installed-app';
 
 const useIdleLogout = (timeout = 600000) => { // 10 minutes default
   const router = useRouter();
@@ -34,10 +35,7 @@ const useIdleLogout = (timeout = 600000) => { // 10 minutes default
     
     // The installed app (home-screen icon) relies on the phone's own lock screen,
     // so it stays signed in; the idle logout only applies in a normal browser tab.
-    const isInstalledApp =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (isInstalledApp) return;
+    if (isInstalledApp()) return;
 
     const isAdminPage = pathname === '/admin';
     const isAuthenticated = !!localStorage.getItem('authenticatedUser');

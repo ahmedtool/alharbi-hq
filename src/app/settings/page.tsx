@@ -12,12 +12,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  ChevronDown, CloudUpload, Database, Download, Eye, EyeOff, KeyRound, Loader2, LogOut, Moon, Palette, RefreshCcw, ShieldCheck, Smartphone, Sun, Upload, Wrench,
+  ChevronDown, CloudUpload, Database, Download, Eye, EyeOff, KeyRound, Loader2, LogOut, Monitor, Moon, Palette, RefreshCcw, ShieldCheck, Smartphone, Sun, Upload, Wrench,
 } from "lucide-react";
 import { exportData, importData } from "./data-actions";
 import { updatePassword } from "./actions";
 import { migrateFirebaseFiles } from "./migrate-files-action";
 import { auth, getAccessToken, signOut } from "@/lib/auth";
+import { canPromptInstall, isInstalledApp, onInstallPromptChange, promptInstall } from "@/lib/installed-app";
 
 const Section = ({ icon: Icon, title, text, children, className }: { icon: React.ElementType; title: string; text: string; children: React.ReactNode; className?: string }) => (
   <section className={cn("rounded-2xl border bg-card p-5", className)}>
@@ -49,6 +50,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [lastSignIn, setLastSignIn] = useState<string | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
   const [dark, setDark] = useState(false);
 
   const [currentPw, setCurrentPw] = useState("");
@@ -68,7 +70,9 @@ export default function SettingsPage() {
       setEmail(data.user?.email ?? "");
       setLastSignIn(data.user?.last_sign_in_at ?? null);
     }).catch(() => {});
-    setInstalled(window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true);
+    setInstalled(isInstalledApp());
+    setCanInstall(canPromptInstall());
+    return onInstallPromptChange(() => setCanInstall(canPromptInstall()));
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
@@ -240,8 +244,22 @@ export default function SettingsPage() {
                 <span>خروج تلقائي إذا ما استخدمتها</span>
                 <b>{installed ? "متوقف في التطبيق" : "بعد ساعة"}</b>
               </li>
-              {!installed && <li className="px-1 text-xs text-muted-foreground">ثبّتها على جوالك من «إضافة للشاشة الرئيسية» وتفتح كتطبيق بدون خروج تلقائي.</li>}
             </ul>
+            {!installed && (
+              <div className="mt-3 space-y-2">
+                {canInstall ? (
+                  <Button className="w-full" onClick={async () => { if (await promptInstall()) toast({ title: "تثبّت التطبيق", description: "تلقاه في قائمة ابدأ وشريط المهام." }); }}>
+                    <Monitor className="me-2 h-4 w-4" /> ثبّتها كتطبيق على جهازك
+                  </Button>
+                ) : (
+                  <p className="rounded-xl border border-dashed px-3 py-2.5 text-xs text-muted-foreground">
+                    <b className="text-foreground">ويندوز:</b> من Edge أو Chrome اضغط أيقونة التثبيت في شريط العنوان، أو القائمة ⋯ ← «التطبيقات» ← «تثبيت هذا الموقع كتطبيق».
+                    <br /><b className="text-foreground">الجوال:</b> مشاركة ← «إضافة إلى الشاشة الرئيسية».
+                  </p>
+                )}
+                <p className="px-1 text-xs text-muted-foreground">التطبيق يفتح على لوحة التحكم مباشرة في نافذة لحاله، بدون خروج تلقائي.</p>
+              </div>
+            )}
           </Section>
         </div>
 

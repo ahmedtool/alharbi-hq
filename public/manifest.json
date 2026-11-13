@@ -8,17 +8,58 @@
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
-    { "src": "/app-icon?size=192", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/app-icon?size=512", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/app-icon?size=512&maskable=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/app-icon?size=192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon?size=512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon?size=512&maskable=1",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "المهام", "url": "/tasks" },
-    { "name": "الفواتير", "url": "/finance/invoices" },
-    { "name": "العملاء", "url": "/clients" }
+    {
+      "name": "الرئيسية",
+      "url": "/dashboard"
+    },
+    {
+      "name": "المهام",
+      "url": "/tasks"
+    },
+    {
+      "name": "المشاريع",
+      "url": "/projects"
+    },
+    {
+      "name": "الفواتير",
+      "url": "/finance/invoices"
+    },
+    {
+      "name": "العملاء",
+      "url": "/clients"
+    }
+  ],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
   ]
 }

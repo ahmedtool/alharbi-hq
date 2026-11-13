@@ -8,6 +8,10 @@ import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import useClient from '@/hooks/use-client';
 import { MobileTabBar } from '@/components/app/mobile-tab-bar';
+import { isInstalledApp } from '@/lib/installed-app';
+
+// Public site pages: the installed app skips them and goes to the dashboard.
+const siteOnlyPages = ['/', '/cv'];
 
 
 const publicPages = ['/admin', '/support/submit', '/cv'];
@@ -38,6 +42,11 @@ function AuthGuard({ children }: { children: ReactNode }) {
                 setIsVerified(true);
             }
             return;
+        }
+
+        if (siteOnlyPages.includes(pathname) && isInstalledApp()) {
+             router.replace('/dashboard');
+             return;
         }
 
         if (isPublicPage(pathname)) {
