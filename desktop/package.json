@@ -1,14 +1,14 @@
 {
   "name": "ahmed-alharbi-desktop",
   "productName": "أحمد الحربي",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "لوحة تحكم أحمد الحربي كتطبيق ويندوز",
   "author": "Ahmed Alharbi",
   "main": "main.js",
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis --x64"
+    "dist": "electron-builder --win nsis --x64 --publish never"
   },
   "devDependencies": {
     "electron": "33.2.1",
@@ -47,10 +47,16 @@
       "uninstallerIcon": "build/icon.ico",
       "language": "1025"
     },
-    "publish": null
+    "publish": {
+      "provider": "generic",
+      "url": "https://raw.githubusercontent.com/ahmedtool/alharbi-desktop-updates/main/"
+    }
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/ahmedtool/alharbi-hq"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   }
 }

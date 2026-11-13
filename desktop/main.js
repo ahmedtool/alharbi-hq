@@ -2,7 +2,8 @@
 // It opens the live dashboard in its own window (no browser UI), keeps the
 // system window buttons over the page's own title bar, and sends any outside
 // link (WhatsApp, email, other sites) to the normal browser.
-const { app, BrowserWindow, shell, ipcMain, Menu, screen } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, Menu, screen, dialog } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 
@@ -130,6 +131,30 @@ ipcMain.on("titlebar-theme", (_e, dark) => {
 });
 ipcMain.on("retry", () => win && win.loadURL(START));
 
+// Updates: check on start and every few hours, download quietly, then offer a restart.
+// A skipped restart still installs the update the next time the app is closed.
+function setupUpdates() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on("error", (e) => console.warn("update check failed:", e && e.message));
+  autoUpdater.on("update-downloaded", async (info) => {
+    const { response } = await dialog.showMessageBox(win, {
+      type: "info",
+      buttons: ["أعد التشغيل الحين", "لاحقًا"],
+      defaultId: 0,
+      cancelId: 1,
+      title: "تحديث جديد",
+      message: `نسخة جديدة من التطبيق جاهزة (${info.version}).`,
+      detail: "أعد التشغيل عشان تتثبّت، أو تتثبّت لحالها لما تقفل التطبيق.",
+    });
+    if (response === 0) setImmediate(() => autoUpdater.quitAndInstall(true, true));
+  });
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  check();
+  setInterval(check, 4 * 60 * 60 * 1000);
+}
+
 app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
-app.whenReady().then(createWindow);
+app.whenReady().then(() => { createWindow(); setupUpdates(); });
 app.on("window-all-closed", () => app.quit());
