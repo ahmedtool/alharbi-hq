@@ -6,7 +6,8 @@ import { db } from "@/lib/db";
 import { collection, getDocs } from "@/lib/db";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { navLinks } from "@/lib/nav";
+import { navFor } from "@/lib/nav";
+import { isInstalledApp } from "@/lib/installed-app";
 import {
   AlertTriangle, ArrowUpLeft, Briefcase, CalendarClock, CheckCircle2, Circle, FileDigit, FileText, LifeBuoy, PlusCircle, Receipt, Repeat, Wallet,
 } from "lucide-react";
@@ -40,9 +41,11 @@ export default function DashboardPage() {
   const [tickets, setTickets] = React.useState<Ticket[]>([]);
   const [subs, setSubs] = React.useState<Sub[]>([]);
   const [now, setNow] = React.useState<Date | null>(null);
+  const [inApp, setInApp] = React.useState(false);
 
   React.useEffect(() => {
     setNow(new Date());
+    setInApp(isInstalledApp());
     const get = <T,>(c: string) => getDocs(collection(db, c)).then((s) => s.docs.map((d) => ({ ...(d.data() as object), id: d.id }) as T)).catch(() => [] as T[]);
     Promise.all([get<Tx>("transactions"), get<Inv>("invoices"), get<Task>("tasks"), get<Project>("projects"), get<Ticket>("support_tickets"), get<Sub>("subscriptions")])
       .then(([t, i, ta, p, ti, s]) => { setTxs(t); setInvoices(i); setTasks(ta.map((x) => ({ ...x, subTasks: x.subTasks || [] }))); setProjects(p); setTickets(ti); setSubs(s); })
@@ -207,7 +210,7 @@ export default function DashboardPage() {
 
       {/* All sections */}
       <section className="space-y-6">
-        {navLinks.map((group) => (
+        {navFor(inApp).map((group) => (
           <div key={group.category}>
             <h2 className="mb-3 text-sm font-bold text-muted-foreground">{group.category}</h2>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">

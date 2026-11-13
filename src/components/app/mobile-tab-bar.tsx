@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { mobileTabs, navLinks } from "@/lib/nav";
+import { mobileTabs, navFor } from "@/lib/nav";
+import { isInstalledApp } from "@/lib/installed-app";
 import { cn } from "@/lib/utils";
 
 /** A tab is active on its own page and on pages below it (e.g. /finance/invoices under /finance). */
@@ -19,6 +20,8 @@ const isActive = (pathname: string, href: string) =>
 export function MobileTabBar() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = React.useState(false);
+  const [inApp, setInApp] = React.useState(false);
+  React.useEffect(() => setInApp(isInstalledApp()), []);
 
   // Close the sheet after navigating from it.
   React.useEffect(() => setMoreOpen(false), [pathname]);
@@ -80,7 +83,7 @@ export function MobileTabBar() {
             <SheetTitle>كل الأقسام</SheetTitle>
           </SheetHeader>
           <div className="mt-4 space-y-6">
-            {navLinks.map((section) => (
+            {navFor(inApp).map((section) => (
               <section key={section.category}>
                 <h3 className="mb-2 text-xs font-bold text-muted-foreground">{section.category}</h3>
                 <div className="grid grid-cols-3 gap-2">

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Copy, ExternalLink, Inbox, LifeBuoy, MessageCircle, Paperclip, Search } from "lucide-react";
 import { CATEGORY, STATUS, initialsOf, relTime, toDate, type Ticket, type TicketStatus } from "./model";
+import { isInstalledApp } from "@/lib/installed-app";
 
 type Filter = "active" | TicketStatus;
 
@@ -22,9 +23,11 @@ export default function SupportPage() {
   const [filter, setFilter] = React.useState<Filter>("active");
   const [search, setSearch] = React.useState("");
   const [link, setLink] = React.useState("");
+  const [inApp, setInApp] = React.useState(false);
 
   React.useEffect(() => {
-    setLink(`${window.location.origin}/support/submit`);
+    setLink(`https://www.ahmedalharbi.com/support/submit`);
+    setInApp(isInstalledApp());
     getDocs(collection(db, "support_tickets"))
       .then((s) => setTickets(
         s.docs.map((d) => ({ ...(d.data() as Omit<Ticket, "id">), id: d.id }))
@@ -81,7 +84,7 @@ export default function SupportPage() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={copy} disabled={!link}><Copy className="me-1.5 h-4 w-4" /> نسخ</Button>
           <Button variant="outline" size="sm" asChild><a href={`https://wa.me/?text=${encodeURIComponent(`لأي طلب أو استفسار: ${link}`)}`} target="_blank" rel="noopener"><MessageCircle className="me-1.5 h-4 w-4" /> واتساب</a></Button>
-          <Button variant="outline" size="sm" asChild><a href="/support/submit" target="_blank" rel="noopener"><ExternalLink className="me-1.5 h-4 w-4" /> فتح</a></Button>
+          {!inApp && <Button variant="outline" size="sm" asChild><a href="/support/submit" target="_blank" rel="noopener"><ExternalLink className="me-1.5 h-4 w-4" /> فتح</a></Button>}
         </div>
       </section>
 

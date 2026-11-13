@@ -11,7 +11,8 @@ import { MobileTabBar } from '@/components/app/mobile-tab-bar';
 import { isInstalledApp } from '@/lib/installed-app';
 
 // Public site pages: the installed app skips them and goes to the dashboard.
-const siteOnlyPages = ['/', '/cv'];
+const siteOnlyPages = ['/', '/cv', '/support/submit', '/request-preview'];
+const isSitePage = (p: string) => siteOnlyPages.includes(p) || p === '/blog' || p.startsWith('/blog/') || p.startsWith('/public-tools');
 
 
 const publicPages = ['/admin', '/support/submit', '/cv'];
@@ -44,7 +45,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
             return;
         }
 
-        if (siteOnlyPages.includes(pathname) && isInstalledApp()) {
+        if (isSitePage(pathname) && isInstalledApp()) {
              router.replace('/dashboard');
              return;
         }

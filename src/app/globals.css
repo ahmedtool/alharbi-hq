@@ -169,7 +169,10 @@ html.app-titlebar .wco-bar {
   -webkit-app-region: drag; app-region: drag; user-select: none;
 }
 html.app-titlebar .wco-nodrag, html.app-titlebar .wco-nodrag * { -webkit-app-region: no-drag; app-region: no-drag; }
-html.app-titlebar body { padding-top: env(titlebar-area-height, 33px); }
+html.app-titlebar { --tb: env(titlebar-area-height, 33px); }
+html.app-titlebar body { padding-top: var(--tb); }
+html.app-titlebar :is(.min-h-screen, .min-h-svh, .min-h-dvh) { min-height: calc(100dvh - var(--tb)); }
+html.app-titlebar :is(.h-screen, .h-svh, .h-dvh) { height: calc(100dvh - var(--tb)); }
 @media print { .wco-bar { display: none !important; } }
 
 /* Desktop app feel (Windows app and installed window): slim scrollbars like
@@ -184,3 +187,4 @@ html.app-titlebar ::-webkit-scrollbar-corner { background: transparent; }
 html.app-titlebar :is(button, [role="button"], [role="tab"], [role="menuitem"], [role="option"], nav, label, .tab-bar) { -webkit-user-select: none; user-select: none; }
 html.app-titlebar :is(button, [role="button"], [role="tab"], [role="menuitem"], [role="option"]) { cursor: default; }
 html.app-titlebar img, html.app-titlebar svg { -webkit-user-drag: none; }
+html.app-titlebar .page-enter { animation: fade-only .2s ease both; }

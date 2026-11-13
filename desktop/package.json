@@ -1,7 +1,7 @@
 {
   "name": "ahmed-alharbi-desktop",
   "productName": "أحمد الحربي",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "لوحة تحكم أحمد الحربي كتطبيق ويندوز",
   "author": "Ahmed Alharbi",
   "main": "main.js",

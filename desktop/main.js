@@ -30,6 +30,13 @@ function saveState() {
   try { fs.writeFileSync(stateFile(), JSON.stringify({ ...win.getNormalBounds(), maximized: win.isMaximized() })); } catch {}
 }
 
+/** Public-site pages (home, CV, blog, request form): the app never shows them. */
+const isSitePage = (url) => {
+  try {
+    const p = new URL(url).pathname.replace(/\/+$/, "") || "/";
+    return p === "/" || p === "/cv" || p === "/blog" || p.startsWith("/blog/") || p === "/support/submit" || p === "/request-preview" || p.startsWith("/public-tools");
+  } catch { return false; }
+};
 const isOurs = (url) => { try { return new URL(url).origin === SITE || new URL(url).hostname === "ahmedalharbi.com"; } catch { return false; } };
 
 function createWindow() {
@@ -63,12 +70,14 @@ function createWindow() {
 
   // Outside links open in the default browser; our own pages stay in the app.
   win.webContents.setWindowOpenHandler(({ url }) => {
+    if (isOurs(url) && isSitePage(url)) return { action: "deny" };
     if (isOurs(url)) return { action: "allow", overrideBrowserWindowOptions: { autoHideMenuBar: true } };
     shell.openExternal(url);
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (e, url) => {
     if (!isOurs(url)) { e.preventDefault(); shell.openExternal(url); }
+    else if (isSitePage(url)) { e.preventDefault(); win.loadURL(START); }
   });
 
   // No connection: show a small page with a retry button instead of a blank window.

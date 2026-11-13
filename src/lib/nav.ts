@@ -16,7 +16,7 @@ export const navLinks = [
       { name: "الدعم الفني", href: "/support", icon: LifeBuoy },
       { name: "مركز الأفكار", href: "/ideas", icon: Lightbulb },
       { name: "المساعد الذكي", href: "/ai-assistant", icon: MessageCircle },
-      { name: "صفحة طلب المشروع", href: "/request-preview", icon: Send },
+      { name: "صفحة طلب المشروع", href: "/request-preview", icon: Send, site: true },
     ]
   },
   {
@@ -63,3 +63,7 @@ export const mobileTabs = [
   { name: "المالية", href: "/finance", icon: DollarSign },
   { name: "العملاء", href: "/clients", icon: Users },
 ];
+
+/** Sections for the current context: inside the installed app, links that show the public site are left out. */
+export const navFor = (inApp: boolean) =>
+  inApp ? navLinks.map((g) => ({ ...g, links: g.links.filter((l) => !("site" in l && l.site)) })) : navLinks;
