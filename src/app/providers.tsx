@@ -5,6 +5,7 @@ import { DirectionProvider } from "@radix-ui/react-direction";
 import { Toaster } from "@/components/ui/toaster";
 import { RegisterServiceWorker } from "@/components/app/register-sw";
 import { TitleBar } from "@/components/app/title-bar";
+import { AppLock } from "@/components/app/app-lock";
 import useClient from "@/hooks/use-client";
 import Body from "./body";
 
@@ -31,6 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <DirectionProvider dir="rtl">
       <TitleBar />
       <Body>{children}</Body>
+      {isClient && <AppLock />}
       <RegisterServiceWorker />
       {isClient && <div className="no-print"><Toaster /></div>}
     </DirectionProvider>

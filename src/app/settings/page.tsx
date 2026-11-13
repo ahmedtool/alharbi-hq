@@ -19,6 +19,8 @@ import { updatePassword } from "./actions";
 import { migrateFirebaseFiles } from "./migrate-files-action";
 import { auth, getAccessToken, signOut } from "@/lib/auth";
 import { canPromptInstall, isInstalledApp, onInstallPromptChange, promptInstall } from "@/lib/installed-app";
+import { canUseDeviceUnlock, disableLock, enableLock, isLockEnabled } from "@/lib/app-lock";
+import { Switch } from "@/components/ui/switch";
 
 const Section = ({ icon: Icon, title, text, children, className }: { icon: React.ElementType; title: string; text: string; children: React.ReactNode; className?: string }) => (
   <section className={cn("rounded-2xl border bg-card p-5", className)}>
@@ -51,6 +53,9 @@ export default function SettingsPage() {
   const [lastSignIn, setLastSignIn] = useState<string | null>(null);
   const [installed, setInstalled] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
+  const [lockSupported, setLockSupported] = useState(false);
+  const [lockOn, setLockOn] = useState(false);
+  const [lockBusy, setLockBusy] = useState(false);
   const [dark, setDark] = useState(false);
 
   const [currentPw, setCurrentPw] = useState("");
@@ -71,6 +76,8 @@ export default function SettingsPage() {
       setLastSignIn(data.user?.last_sign_in_at ?? null);
     }).catch(() => {});
     setInstalled(isInstalledApp());
+    setLockOn(isLockEnabled());
+    canUseDeviceUnlock().then(setLockSupported);
     setCanInstall(canPromptInstall());
     return onInstallPromptChange(() => setCanInstall(canPromptInstall()));
     setDark(document.documentElement.classList.contains("dark"));
@@ -178,6 +185,21 @@ export default function SettingsPage() {
     }
   };
 
+  const toggleLock = async (on: boolean) => {
+    if (!on) { disableLock(); setLockOn(false); toast({ title: "انشال القفل" }); return; }
+    setLockBusy(true);
+    try {
+      await enableLock(email);
+      setLockOn(true);
+      toast({ title: "تفعّل القفل", description: "التطبيق بيطلب وجهك أو بصمتك كل ما تفتحه." });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "ما تفعّل القفل", description: "تأكد إن Windows Hello مفعّل في إعدادات ويندوز (الحسابات ← خيارات تسجيل الدخول)." });
+    } finally {
+      setLockBusy(false);
+    }
+  };
+
   const pw = strength(newPw);
   const initial = (email[0] || "أ").toUpperCase();
 
@@ -240,6 +262,15 @@ export default function SettingsPage() {
           {/* Session */}
           <Section icon={Smartphone} title="الجلسة" text={installed ? "أنت فاتح لوحة التحكم كتطبيق." : "أنت فاتح لوحة التحكم من المتصفح."}>
             <ul className="space-y-2 text-sm">
+              {installed && (
+                <li className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2.5">
+                  <span>
+                    <span className="block">قفل ببصمة الوجه أو الإصبع</span>
+                    <span className="block text-xs text-muted-foreground">{lockSupported ? "Windows Hello أو Face ID، كل ما تفتح التطبيق" : "جهازك ما يدعم القفل البيومتري هنا"}</span>
+                  </span>
+                  {lockBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Switch checked={lockOn} onCheckedChange={toggleLock} disabled={!lockSupported && !lockOn} />}
+                </li>
+              )}
               <li className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2.5">
                 <span>خروج تلقائي إذا ما استخدمتها</span>
                 <b>{installed ? "متوقف في التطبيق" : "بعد ساعة"}</b>

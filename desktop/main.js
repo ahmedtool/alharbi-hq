@@ -88,6 +88,28 @@ function createWindow() {
     else if (i.alt && i.key === "ArrowLeft" && wc.navigationHistory.canGoBack()) { wc.navigationHistory.goBack(); e.preventDefault(); }
   });
 
+  // Right-click menu in Arabic for text: cut, copy, paste, select all.
+  win.webContents.on("context-menu", (_e, p) => {
+    const items = [];
+    if (p.isEditable) {
+      items.push(
+        { label: "قص", role: "cut", enabled: p.editFlags.canCut },
+        { label: "نسخ", role: "copy", enabled: p.editFlags.canCopy },
+        { label: "لصق", role: "paste", enabled: p.editFlags.canPaste },
+        { type: "separator" },
+        { label: "تحديد الكل", role: "selectAll" },
+      );
+    } else if (p.selectionText.trim()) {
+      items.push({ label: "نسخ", role: "copy" });
+    }
+    if (p.linkURL && !p.linkURL.startsWith("javascript:")) {
+      if (items.length) items.push({ type: "separator" });
+      items.push({ label: "نسخ الرابط", click: () => require("electron").clipboard.writeText(p.linkURL) });
+      if (!isOurs(p.linkURL)) items.push({ label: "فتح في المتصفح", click: () => shell.openExternal(p.linkURL) });
+    }
+    if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
+  });
+
   win.loadURL(START);
 }
 
