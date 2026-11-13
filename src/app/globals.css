@@ -160,16 +160,14 @@ button, a, [role="button"] { touch-action: manipulation; }
 /* Installed desktop app with "window controls overlay": our own title bar next to
    the system buttons; it's draggable like a normal window title. */
 .wco-bar { display: none; }
-@media (display-mode: window-controls-overlay) {
-  .wco-bar {
-    display: flex; align-items: center; gap: 6px;
-    position: fixed; z-index: 60; top: env(titlebar-area-y, 0);
-    left: env(titlebar-area-x, 0); width: env(titlebar-area-width, 100%); height: env(titlebar-area-height, 33px);
-    padding-inline: 12px; font-size: 12px;
-    background: hsl(var(--background)); border-bottom: 1px solid hsl(var(--border));
-    -webkit-app-region: drag; app-region: drag; user-select: none;
-  }
-  .wco-nodrag, .wco-nodrag * { -webkit-app-region: no-drag; app-region: no-drag; }
-  body { padding-top: env(titlebar-area-height, 33px); }
+html.app-titlebar .wco-bar {
+  display: flex; align-items: center; gap: 6px;
+  position: fixed; z-index: 60; top: env(titlebar-area-y, 0);
+  left: env(titlebar-area-x, 0); width: env(titlebar-area-width, calc(100% - 140px)); height: env(titlebar-area-height, 33px);
+  padding-inline: 12px; font-size: 12px;
+  background: hsl(var(--background)); border-bottom: 1px solid hsl(var(--border));
+  -webkit-app-region: drag; app-region: drag; user-select: none;
 }
+html.app-titlebar .wco-nodrag, html.app-titlebar .wco-nodrag * { -webkit-app-region: no-drag; app-region: no-drag; }
+html.app-titlebar body { padding-top: env(titlebar-area-height, 33px); }
 @media print { .wco-bar { display: none !important; } }

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Home } from "lucide-react";
 import { logoAt } from "@/lib/brand";
+import { isDesktopShell } from "@/lib/installed-app";
 
 /**
  * Title bar for the installed desktop app (Windows/Mac, "window controls overlay"):
@@ -12,6 +14,20 @@ import { logoAt } from "@/lib/brand";
  */
 export function TitleBar() {
   const router = useRouter();
+  // Turn the bar on for the installed PWA window and for the Windows app.
+  useEffect(() => {
+    const mq = window.matchMedia("(display-mode: window-controls-overlay)");
+    const apply = () => document.documentElement.classList.toggle("app-titlebar", mq.matches || isDesktopShell());
+    apply();
+    mq.addEventListener?.("change", apply);
+    // In the Windows app, keep the system window buttons the same colour as the page.
+    const desk = (window as Window & { alharbiDesktop?: { setTitleBarTheme: (d: boolean) => void } }).alharbiDesktop;
+    const sync = () => desk?.setTitleBarTheme(document.documentElement.classList.contains("dark"));
+    sync();
+    const obs = desk ? new MutationObserver(sync) : null;
+    obs?.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => { mq.removeEventListener?.("change", apply); obs?.disconnect(); };
+  }, []);
   return (
     <div className="wco-bar no-print" aria-hidden={false}>
       <img src={logoAt(48)} alt="" width={18} height={18} className="h-[18px] w-[18px] rounded" />

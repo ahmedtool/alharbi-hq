@@ -1,7 +1,11 @@
-/** True when the dashboard runs as the installed app (phone home screen or desktop window). */
+/** True inside the Windows desktop app (Electron shell adds this to its user agent). */
+export const isDesktopShell = () => typeof navigator !== "undefined" && navigator.userAgent.includes("AlharbiDesktop");
+
+/** True when the dashboard runs as the installed app (phone home screen, desktop window or the Windows app). */
 export function isInstalledApp() {
   if (typeof window === "undefined") return false;
   return (
+    isDesktopShell() ||
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: window-controls-overlay)").matches ||
     window.matchMedia("(display-mode: minimal-ui)").matches ||
